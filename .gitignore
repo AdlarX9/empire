@@ -1,2 +1,6 @@
 # Le programme compilé
 main
+
+# Les fichiers générés par les bots
+.vscode
+*.DS_Store
