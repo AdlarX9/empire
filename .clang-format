@@ -1,0 +1,19 @@
+BasedOnStyle: Google
+IndentWidth: 4
+ColumnLimit: 100
+BreakBeforeBraces: Attach  # Les accolades restent attachées à la ligne précédente
+AccessModifierOffset: -2  # Décalage des modificateurs d'accès (public, private, protected)
+AlignConsecutiveDeclarations: true  # Aligner les déclarations consécutives
+AllowShortIfStatementsOnASingleLine: false  # Toujours forcer un `if` à être sur plusieurs lignes
+IndentCaseLabels: true  # Indenter les labels `case` dans les `switch`
+SortIncludes: true  # Trier automatiquement les `#include`
+SpaceBeforeParens: ControlStatements  # Ajouter un espace avant les parenthèses des `if`, `while`, `for`
+SpacesInParentheses: false  # Pas d'espace à l'intérieur des parenthèses
+SpacesBeforeTrailingComments: 2  # Ajoute 2 espaces avant les commentaires de fin de ligne
+PointerAlignment: Left  # Alignement des pointeurs à gauche (`int* ptr`)
+ContinuationIndentWidth: 4  # Indentation des lignes de continuation
+TabWidth: 4  # Définit la largeur des tabulations à 4 espaces
+UseTab: ForIndentation  # Utiliser les tabulations uniquement pour l'indentation, pas pour l'alignement
+AlignTrailingComments: true  # Aligner verticalement les commentaires en fin de ligne
+AllowShortBlocksOnASingleLine: Never  # Toujours forcer un bloc `{}` à être sur plusieurs lignes
+MaxEmptyLinesToKeep: 4
