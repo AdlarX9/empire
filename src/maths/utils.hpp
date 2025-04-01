@@ -78,10 +78,10 @@ class Matrix {
 	double*      elements() const;
 	double       get(unsigned int i, unsigned int j) const;
 	Matrix&      set(unsigned int i, unsigned int j, int value);
+	Matrix&      cwiseProduct(Matrix const& matrix2);
 
 	~Matrix();
 
-	Matrix& operator^=(Matrix const& matrix2);
 	Matrix& operator*=(Matrix const& matrix2);
 	Matrix& operator+=(Matrix const& matrix2);
 	Matrix& operator-=(Matrix const& matrix2);
@@ -89,7 +89,6 @@ class Matrix {
 	Matrix& operator/=(double const& factor);
 };
 
-Matrix operator^(Matrix const& matrix1, Matrix const& matrix2);
 Matrix operator*(Matrix const& matrix1, Matrix const& matrix2);
 Matrix operator+(Matrix const& matrix1, Matrix const& matrix2);
 Matrix operator-(Matrix const& matrix1, Matrix const& matrix2);

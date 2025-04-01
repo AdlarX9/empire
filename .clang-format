@@ -1,6 +1,6 @@
 BasedOnStyle: Google
 IndentWidth: 4
-ColumnLimit: 100
+ColumnLimit: 140
 BreakBeforeBraces: Attach  # Les accolades restent attachées à la ligne précédente
 AccessModifierOffset: -2  # Décalage des modificateurs d'accès (public, private, protected)
 AlignConsecutiveDeclarations: true  # Aligner les déclarations consécutives
