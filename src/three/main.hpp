@@ -31,7 +31,7 @@ class Material {
 	sf::Color m_mainColor;
 
   public:
-	Material(sf::Color color);
+	Material(sf::Color color = sf::Color::White);
 	sf::Color& getMainColor();
 	Material&  setMainColor(sf::Color color);
 	~Material();
@@ -73,15 +73,20 @@ class Scene {
 class Camera {
   protected:
 	sf::Vector3<double> m_position;
-	sf::Vector3<double> m_direction;
+	sf::Vector3<double> m_defaultDirection;
+	UnitQuaternion      m_rotation;
 	unsigned int        m_fov;
 
   public:
-	Camera(sf::Vector3<double> position, sf::Vector3<double> direction, unsigned int m_fov = 60);
+	Camera(sf::Vector3<double> position, unsigned int fov = 60, sf::Vector3<double> direction = sf::Vector3<double>(0, 0, 1));
 
 	sf::Vector3<double>& getPosition();
-	sf::Vector3<double>& getDirection();
+	sf::Vector3<double>& getDefaultDirection();
+	UnitQuaternion&      getRotation();
 	unsigned int         getFov() const;
+	Camera&              lookAt(sf::Vector3<double>& point);
+	Camera&              lookAt(double x, double y, double z);
+	Camera&              translate(double x = 0, double y = 0, double z = 0);
 
 	~Camera();
 };
@@ -103,6 +108,13 @@ class Renderer {
 	sf::Sprite& getSprite();
 
 	~Renderer();
+};
+
+
+class BoxGeometry : public Geometry {
+  public:
+	BoxGeometry(double width = 1, double length = 1, double height = 1);
+	~BoxGeometry();
 };
 
 #endif

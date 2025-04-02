@@ -17,13 +17,19 @@ int main() {
 	sf::Clock        clock;
 	unsigned int     nbrFrame = 0;
 
-	sf::RenderTexture   texture(sf::Vector2u(WIDTH, HEIGHT));
-	sf::Vector3<double> cameraPosition(5, 5, 5);
-	sf::Vector3<double> cameraDirection(-1, -1, -1);
-	Camera              camera(cameraPosition, cameraDirection);
-	Scene               scene;
+	sf::RenderTexture texture(sf::Vector2u(WIDTH, HEIGHT));
 
+	sf::Vector3<double> cameraPosition(1, 1, 1);
+	Camera              camera(cameraPosition);
+	camera.lookAt(0, 0, 0);
+
+	Scene    scene;
 	Renderer renderer(texture, camera, scene);
+
+	BoxGeometry cubeGeometry;
+	Material    cubeMaterial;
+	Mesh        cube(cubeGeometry, cubeMaterial);
+	scene.add(&cube);
 
 	// Start the game loop
 	while (window.isOpen()) {
@@ -37,6 +43,9 @@ int main() {
 
 		// Clear screen
 		window.clear();
+
+		// camera.translate(0.5 * clock.getElapsedTime().asSeconds());
+		// camera.lookAt(0, 0, 0);
 
 		renderer.render();
 		sf::Sprite sprite(texture.getTexture());

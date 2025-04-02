@@ -1,3 +1,3 @@
 void main() {
-	gl_FragColor = vec4(cos(gl_FragCoord.x / 50.), 0., sin(gl_FragCoord.y / 10.), 1.);
+	gl_FragColor = gl_TexCoord[0];
 }
