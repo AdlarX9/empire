@@ -2,12 +2,15 @@
 #define HEIGHT 1500
 
 #include "main.hpp"
+#include "../lib/glad/glad.h"
 
-#include <SFML/Graphics.hpp>
+#include <glm/glm.hpp>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <vector>
+#include <string>
+#include <fstream>
 
 #include "../maths/utils.hpp"
 
@@ -20,19 +23,15 @@ using namespace std;
 
 
 
-Geometry::Geometry(unsigned int vertexCount, sf::Vector3<double>* vertices, unsigned int* faces, sf::Vector3<double>* normalVectors)
+Geometry::Geometry(unsigned int vertexCount, GLfloat* vertices, GLuint* faces, GLfloat* normalVectors)
     : m_vertexCount(vertexCount), m_vertices(vertices), m_faces(faces), m_normalVectors(normalVectors) {}
 
-unsigned int          Geometry::vertexCount() const { return m_vertexCount; }
-sf::Vector3<double>*& Geometry::getVertices() { return m_vertices; }
-unsigned int*&        Geometry::getFaces() { return m_faces; }
-sf::Vector3<double>*& Geometry::getNormalVectors() { return m_normalVectors; }
+unsigned int Geometry::vertexCount() const { return m_vertexCount; }
+GLfloat*&    Geometry::getVertices() { return m_vertices; }
+GLuint*&     Geometry::getFaces() { return m_faces; }
+GLfloat*&    Geometry::getNormalVectors() { return m_normalVectors; }
 
-Geometry::~Geometry() {
-	delete[] m_vertices;
-	delete[] m_faces;
-	delete[] m_normalVectors;
-}
+Geometry::~Geometry() {}
 
 
 
@@ -40,11 +39,11 @@ Geometry::~Geometry() {
 
 
 
-Material::Material(sf::Color color) : m_mainColor(color) {}
+Material::Material(glm::vec4 color) : m_mainColor(color) {}
 
-sf::Color& Material::getMainColor() { return m_mainColor; }
+glm::vec4& Material::getMainColor() { return m_mainColor; }
 
-Material& Material::setMainColor(sf::Color color) {
+Material& Material::setMainColor(glm::vec4 color) {
 	m_mainColor = color;
 	return *this;
 }
@@ -95,22 +94,22 @@ Scene::~Scene() {}
 
 
 
-Camera::Camera(sf::Vector3<double> position, unsigned int fov, sf::Vector3<double> direction)
+Camera::Camera(glm::vec3 position, unsigned int fov, glm::vec3 direction)
     : m_position(position), m_defaultDirection(direction), m_fov(fov), m_rotation(UnitQuaternion()) {}
 
-sf::Vector3<double>& Camera::getPosition() { return m_position; }
-sf::Vector3<double>& Camera::getDefaultDirection() { return m_defaultDirection; }
-UnitQuaternion&      Camera::getRotation() { return m_rotation; }
-unsigned int         Camera::getFov() const { return m_fov; }
+glm::vec3&      Camera::getPosition() { return m_position; }
+glm::vec3&      Camera::getDefaultDirection() { return m_defaultDirection; }
+UnitQuaternion& Camera::getRotation() { return m_rotation; }
+unsigned int    Camera::getFov() const { return m_fov; }
 
-Camera& Camera::lookAt(sf::Vector3<double>& point) {
-	sf::Vector3<double> direction = point - m_position;
-	direction = direction.normalized();
+Camera& Camera::lookAt(glm::vec3& point) {
+	glm::vec3 direction = point - m_position;
+	direction = glm::normalize(direction);
 
-	sf::Vector3<double> defaultDirection = m_defaultDirection;
-	defaultDirection = defaultDirection.normalized();
+	glm::vec3 defaultDirection = m_defaultDirection;
+	defaultDirection = glm::normalize(defaultDirection);
 
-	double dotProduct = defaultDirection.dot(direction);
+	double dotProduct = glm::dot(defaultDirection, direction);
 	dotProduct = std::clamp(dotProduct, -1.0, 1.0);
 	double angle = acos(dotProduct);
 
@@ -131,13 +130,13 @@ Camera& Camera::lookAt(sf::Vector3<double>& point) {
 }
 
 Camera& Camera::lookAt(double x, double y, double z) {
-	sf::Vector3<double> point(x, y, z);
+	glm::vec3 point(x, y, z);
 	this->lookAt(point);
 	return *this;
 }
 
 Camera& Camera::translate(double x, double y, double z) {
-	m_position += sf::Vector3<double>(x, y, z);
+	m_position += glm::vec3(x, y, z);
 	return *this;
 }
 
@@ -149,65 +148,90 @@ Camera::~Camera() {}
 
 
 
-Renderer::Renderer(sf::RenderTexture& renderTexture, Camera& camera, Scene& scene)
-    : m_renderTexture(renderTexture),
-      m_camera(camera),
-      m_scene(scene),
-      m_shader(sf::Shader()),
-      m_sprite(sf::Sprite(renderTexture.getTexture())) {
-	if (!m_shader.loadFromFile("src/shaders/rasterization.vert", "src/shaders/mapping.frag")) {
-		cerr << "failed to load test.frag" << endl;
-		exit(EXIT_FAILURE);
+Renderer::Renderer(Camera& camera, Scene& scene) : m_camera(camera), m_scene(scene), m_shaderProgram(0) {
+	std::string vertexShaderString = loadShader("src/shaders/rasterization.vert");
+	std::string fragmentShaderString = loadShader("src/shaders/mapping.frag");
+	const char* vertexShaderSource = vertexShaderString.c_str();
+	const char* fragmentShaderSource = fragmentShaderString.c_str();
+
+	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
+	glCompileShader(vertexShader);
+
+	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
+	glCompileShader(fragmentShader);
+
+	GLuint shaderProgram = glCreateProgram();
+
+	glAttachShader(shaderProgram, vertexShader);
+	glAttachShader(shaderProgram, fragmentShader);
+	glLinkProgram(shaderProgram);
+	glDeleteShader(vertexShader);
+	glDeleteShader(fragmentShader);
+}
+
+std::string Renderer::loadShader(const char* path) {
+	std::ifstream in(path, std::ios::binary);
+
+	if (in) {
+		std::string contents;
+		in.seekg(0, std::ios::end);
+		contents.resize(in.tellg());
+		in.seekg(0, std::ios::beg);
+		in.read(&contents[0], contents.size());
+		in.close();
+		return contents;
+	} else {
+		std::cerr << "Error: Could not open shader file " << path << std::endl;
+		return "";
 	}
 }
 
-sf::Sprite& Renderer::getSprite() { return m_sprite; }
-
 void Renderer::render() {
-	sf::VertexArray vertices(sf::PrimitiveType::Triangles);
 	for (Mesh* mesh : m_scene.getMeshes()) {
 		Geometry& geometry = mesh->getGeometry();
 		Material& material = mesh->getMaterial();
 
-		for (unsigned int i = 0; i < 36; i++) {
-			sf::Vector3<double> vertexPos = geometry.getVertices()[geometry.getFaces()[i]];
-			sf::Vertex vertex = {sf::Vector2f(vertexPos.x, vertexPos.y), material.getMainColor(), {static_cast<float>(vertexPos.z), 0.0f}};
+		GLfloat* vertices = geometry.getVertices();
+		GLuint*  faces = geometry.getFaces();
+		GLfloat* normal = geometry.getNormalVectors();
 
-			vertices.append(vertex);
-			Quaternion rotatedVertex = m_camera.getRotation().getConjugate() *
-			                           Quaternion(vertex.position.x, vertex.position.y, vertex.texCoords.x, 0) * m_camera.getRotation();
-			rotatedVertex -= m_camera.getPosition();
+		glm::vec4 color = material.getMainColor();
 
-			cout << endl;
-			cout << vertex.position.x << " ; " << vertex.position.y << " ; " << vertex.texCoords.x << endl;
-			cout << m_camera.getRotation().x() << " ; " << m_camera.getRotation().y() << " ; " << m_camera.getRotation().z() << " ; "
-			     << m_camera.getRotation().w() << endl;
-			cout << rotatedVertex.x() << " ; " << rotatedVertex.y() << " ; " << rotatedVertex.z() << endl;
-		}
+		GLuint VAO, VBO, EBO;
+		glGenVertexArrays(1, &VAO);
+		glGenBuffers(1, &VBO);
+		glGenBuffers(1, &EBO);
+
+		glBindVertexArray(VAO);
+
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(faces), faces, GL_STATIC_DRAW);
+
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+		glUseProgram(m_shaderProgram);
+		glBindVertexArray(VAO);
+		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
+
+		glDeleteVertexArrays(1, &VAO);
+		glDeleteBuffers(1, &VBO);
+		glDeleteBuffers(1, &EBO);
 	}
-	cout << endl << "----------------------------------------------------------------" << endl;
-
-	m_shader.setUniform("cameraPosition", sf::Vector3f(m_camera.getPosition()));
-	m_shader.setUniform("screenWidth", WIDTH);
-	m_shader.setUniform("screenHeight", HEIGHT);
-
-	UnitQuaternion cameraRotation = m_camera.getRotation();
-	UnitQuaternion cameraRotationConjugate = m_camera.getRotation().getConjugate();
-
-	sf::Glsl::Vec4 cameraRotationVec(static_cast<float>(cameraRotation.x()), static_cast<float>(cameraRotation.y()),
-	                                 static_cast<float>(cameraRotation.z()), static_cast<float>(cameraRotation.w()));
-	m_shader.setUniform("cameraRotation", cameraRotationVec);
-
-	sf::Glsl::Vec4 cameraRotationConjugateVec(
-	    static_cast<float>(cameraRotationConjugate.x()), static_cast<float>(cameraRotationConjugate.y()),
-	    static_cast<float>(cameraRotationConjugate.z()), static_cast<float>(cameraRotationConjugate.w()));
-	m_shader.setUniform("cameraRotationConjugate", cameraRotationConjugateVec);
-
-	m_renderTexture.clear(sf::Color::Black);
-	m_renderTexture.draw(vertices, &m_shader);
 }
 
-Renderer::~Renderer() {}
+Renderer::~Renderer() { glDeleteProgram(m_shaderProgram); }
 
 
 
@@ -218,36 +242,40 @@ Renderer::~Renderer() {}
 BoxGeometry::BoxGeometry(double x, double y, double z) : Geometry::Geometry(0, {}, {}, {}) {
 	m_vertexCount = 8;
 
-	double halfX = x / 2.0;
-	double halfY = y / 2.0;
-	double halfZ = z / 2.0;
+	GLfloat halfX = x / 2.0;
+	GLfloat halfY = y / 2.0;
+	GLfloat halfZ = z / 2.0;
 
-	m_vertices = new sf::Vector3<double>[m_vertexCount];
-	m_vertices[0] = {-halfX, -halfY, -halfZ};
-	m_vertices[1] = {halfX, -halfY, -halfZ};
-	m_vertices[2] = {halfX, halfY, -halfZ};
-	m_vertices[3] = {-halfX, halfY, -halfZ};
-	m_vertices[4] = {-halfX, halfY, halfZ};
-	m_vertices[5] = {-halfX, -halfY, halfZ};
-	m_vertices[6] = {halfX, -halfY, halfZ};
-	m_vertices[7] = {halfX, halfY, halfZ};
+	GLfloat vertices[] = {
+	    -halfX, -halfY, -halfZ,  //
+	    halfX,  -halfY, -halfZ,  //
+	    halfX,  halfY,  -halfZ,  //
+	    -halfX, halfY,  -halfZ,  //
+	    -halfX, halfY,  halfZ,   //
+	    -halfX, -halfY, halfZ,   //
+	    halfX,  -halfY, halfZ,   //
+	    halfX,  halfY,  halfZ    //
+	};
+	m_vertices = vertices;
 
-	m_faces =
-	    new unsigned int[36]{0, 1, 2, 0, 2, 3, 1, 2, 7, 1, 2, 6, 1, 0, 5, 1, 0, 6, 4, 5, 6, 4, 5, 7, 4, 3, 0, 4, 3, 5, 4, 7, 2, 4, 7, 3};
+	GLuint faces[] = {0, 1, 2, 0, 2, 3, 1, 2, 7, 1, 2, 6, 1, 0, 5, 1, 0, 6, 4, 5, 6, 4, 5, 7, 4, 3, 0, 4, 3, 5, 4, 7, 2, 4, 7, 3};
+	m_faces = faces;
 
-	m_normalVectors = new sf::Vector3<double>[12];
-	m_normalVectors[0] = sf::Vector3<double>(0, 0, -1);
-	m_normalVectors[1] = sf::Vector3<double>(0, 0, -1);
-	m_normalVectors[2] = sf::Vector3<double>(1, 0, 0);
-	m_normalVectors[3] = sf::Vector3<double>(1, 0, 0);
-	m_normalVectors[4] = sf::Vector3<double>(0, -1, 0);
-	m_normalVectors[5] = sf::Vector3<double>(0, -1, 0);
-	m_normalVectors[6] = sf::Vector3<double>(0, 0, 1);
-	m_normalVectors[7] = sf::Vector3<double>(0, 0, 1);
-	m_normalVectors[8] = sf::Vector3<double>(-1, 0, 0);
-	m_normalVectors[9] = sf::Vector3<double>(-1, 0, 0);
-	m_normalVectors[10] = sf::Vector3<double>(0, 1, 0);
-	m_normalVectors[11] = sf::Vector3<double>(0, 1, 0);
+	GLfloat normalVectors[] = {
+	    0,  0,  -1,  //
+	    0,  0,  -1,  //
+	    1,  0,  0,   //
+	    1,  0,  0,   //
+	    0,  -1, 0,   //
+	    0,  -1, 0,   //
+	    0,  0,  1,   //
+	    0,  0,  1,   //
+	    -1, 0,  0,   //
+	    -1, 0,  0,   //
+	    0,  1,  0,   //
+	    0,  1,  0,   //
+	};
+	m_normalVectors = normalVectors;
 }
 
 BoxGeometry::~BoxGeometry() {}

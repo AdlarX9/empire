@@ -1,6 +1,6 @@
 #include "utils.hpp"
 
-#include <SFML/Graphics.hpp>
+#include <glm/glm.hpp>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -15,7 +15,7 @@ using namespace std;
 
 
 Quaternion::Quaternion(double x, double y, double z, double w) : m_x(x), m_y(y), m_z(z), m_w(w) {}
-Quaternion::Quaternion(sf::Vector3<double>& vector3) : m_w(0), m_x(vector3.x), m_y(vector3.y), m_z(vector3.z) {}
+Quaternion::Quaternion(glm::vec3& vector3) : m_w(0), m_x(vector3.x), m_y(vector3.y), m_z(vector3.z) {}
 
 double Quaternion::x() const { return m_x; }
 double Quaternion::y() const { return m_y; }
@@ -167,8 +167,7 @@ UnitQuaternion::UnitQuaternion(double angle, double x, double y, double z)
 }
 
 UnitQuaternion::UnitQuaternion(Quaternion q) : Quaternion::Quaternion(q.x(), q.y(), q.z(), q.w()) { this->normalize(); }
-UnitQuaternion::UnitQuaternion(double angle, sf::Vector3<double> vector3)
-    : UnitQuaternion::UnitQuaternion(angle, vector3.x, vector3.y, vector3.z) {}
+UnitQuaternion::UnitQuaternion(double angle, glm::vec3 vector3) : UnitQuaternion::UnitQuaternion(angle, vector3.x, vector3.y, vector3.z) {}
 
 UnitQuaternion& UnitQuaternion::set(double angle, double x, double y, double z) {
 	double sin = std::sin(angle / 360 * M_PI);

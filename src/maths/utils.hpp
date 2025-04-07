@@ -1,7 +1,8 @@
 #ifndef MATHS_UTILS
 #define MATHS_UTILS
 
-#include <SFML/Graphics.hpp>
+#include <glm/glm.hpp>
+#include <iostream>
 
 class Quaternion {
   protected:
@@ -12,7 +13,7 @@ class Quaternion {
 
   public:
 	Quaternion(double x = 0, double y = 0, double z = 0, double w = 0);
-	Quaternion(sf::Vector3<double>& vector3);
+	Quaternion(glm::vec3& vector3);
 
 	Quaternion& x(double x);
 	double      x() const;
@@ -29,7 +30,7 @@ class Quaternion {
 	Quaternion&         normalize();
 	Quaternion&         conjugate();
 	Quaternion          getConjugate() const;
-	double               dot(Quaternion const& quaternion) const;
+	double              dot(Quaternion const& quaternion) const;
 
 	void print(std::ostream& flow) const;
 
@@ -57,7 +58,7 @@ std::ostream& operator<<(std::ostream& flow, Quaternion const& quaternion);
 class UnitQuaternion : public Quaternion {
   public:
 	UnitQuaternion(double angle = 0, double x = 0, double y = 0, double z = 0);
-	UnitQuaternion(double angle, sf::Vector3<double> vector3);
+	UnitQuaternion(double angle, glm::vec3 vector3);
 	UnitQuaternion(Quaternion quaternion);
 	UnitQuaternion& set(double angle, double x = 0, double y = 0, double z = 0);
 	~UnitQuaternion();

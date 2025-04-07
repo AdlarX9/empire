@@ -6,7 +6,7 @@ AccessModifierOffset: -2  # Décalage des modificateurs d'accès (public, privat
 AlignConsecutiveDeclarations: true  # Aligner les déclarations consécutives
 AllowShortIfStatementsOnASingleLine: false  # Toujours forcer un `if` à être sur plusieurs lignes
 IndentCaseLabels: true  # Indenter les labels `case` dans les `switch`
-SortIncludes: true  # Trier automatiquement les `#include`
+SortIncludes: false  # Trier automatiquement les `#include`
 SpaceBeforeParens: ControlStatements  # Ajouter un espace avant les parenthèses des `if`, `while`, `for`
 SpacesInParentheses: false  # Pas d'espace à l'intérieur des parenthèses
 SpacesBeforeTrailingComments: 2  # Ajoute 2 espaces avant les commentaires de fin de ligne
