@@ -75,6 +75,9 @@ double Quaternion::dot(Quaternion const& quaternion) const {
 	return m_w * quaternion.w() + m_x * quaternion.x() + m_y * quaternion.y() + m_z * quaternion.z();
 }
 
+glm::vec4 Quaternion::getValue() const { return glm::vec4(m_x, m_y, m_z, m_w); }
+glm::vec3 Quaternion::getVector() const { return glm::vec3(m_x, m_y, m_z); }
+
 
 Quaternion& Quaternion::operator*=(Quaternion const& q) {
 	double w(m_w), x(m_x), y(m_y), z(m_z), w1(q.w()), x1(q.x()), y1(q.y()), z1(q.z());

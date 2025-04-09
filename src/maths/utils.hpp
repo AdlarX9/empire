@@ -31,6 +31,8 @@ class Quaternion {
 	Quaternion&         conjugate();
 	Quaternion          getConjugate() const;
 	double              dot(Quaternion const& quaternion) const;
+	glm::vec4           getValue() const;
+	glm::vec3           getVector() const;
 
 	void print(std::ostream& flow) const;
 

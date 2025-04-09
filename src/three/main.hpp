@@ -3,6 +3,7 @@
 
 #include "../lib/glad/glad.h"
 #include <glm/glm.hpp>
+#include <GLFW/glfw3.h>
 #include <vector>
 #include <string>
 
@@ -12,15 +13,17 @@ class Geometry {
   protected:
 	unsigned int m_vertexCount;
 	GLfloat*     m_vertices;
+	unsigned int m_faceCount;
 	GLuint*      m_faces;
 	GLfloat*     m_normalVectors;
 
   public:
-	Geometry(unsigned int vertexCount, GLfloat* vertices, GLuint* faces, GLfloat* normalVectors);
+	Geometry(unsigned int vertexCount, GLfloat* vertices, unsigned int faceCount, GLuint* faces, GLfloat* normalVectors);
 
 	unsigned int vertexCount() const;
-	GLfloat*&    getVertices();
-	GLuint*&     getFaces();
+	GLfloat*     getVertices() const;
+	unsigned int faceCount() const;
+	GLuint*      getFaces() const;
 	GLfloat*&    getNormalVectors();
 
 	~Geometry();
@@ -74,21 +77,27 @@ class Scene {
 
 class Camera {
   protected:
-	glm::vec3      m_position;
-	glm::vec3      m_defaultDirection;
-	UnitQuaternion m_rotation;
-	unsigned int   m_fov;
+	glm::vec3    m_position;
+	glm::vec3    m_defaultDirection;
+	glm::vec3    m_direction;
+	unsigned int m_fov;
+	glm::vec2    m_mousePos;
+	GLFWwindow*  m_window;
 
   public:
-	Camera(glm::vec3 position, unsigned int fov = 60, glm::vec3 direction = glm::vec3(0, 0, 1));
+	Camera(GLFWwindow* window, glm::vec3 position, unsigned int fov = 60, glm::vec3 direction = glm::vec3(0, 0, 1));
 
-	glm::vec3&      getPosition();
-	glm::vec3&      getDefaultDirection();
-	UnitQuaternion& getRotation();
-	unsigned int    getFov() const;
-	Camera&         lookAt(glm::vec3& point);
-	Camera&         lookAt(double x, double y, double z);
-	Camera&         translate(double x = 0, double y = 0, double z = 0);
+	glm::vec3&   getPosition();
+	glm::vec3&   getDefaultDirection();
+	glm::vec3&   getDirection();
+	glm::vec3    getXAxis() const;
+	glm::vec3    getYAxis() const;
+	unsigned int getFov() const;
+	Camera&      lookAt(const glm::vec3& point);
+	Camera&      lookAt(double x, double y, double z);
+	Camera&      translate(double x = 0, double y = 0, double z = 0);
+	void         handleKeyControls(float deltaTime);
+	void         handleMouseControls();
 
 	~Camera();
 };

@@ -1,3 +1,6 @@
+#define WIDTH 2400
+#define HEIGHT 1500
+
 #include "../lib/glad/glad.h"
 #include "../three/main.hpp"
 
@@ -18,7 +21,8 @@ int main() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	GLFWwindow* window = glfwCreateWindow(1280, 800, "Empire", nullptr, nullptr);
+	glfwWindowHint(GLFW_DEPTH_BITS, 24);
+	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Empire", nullptr, nullptr);
 	if (window == nullptr) {
 		cerr << "Failed to create GLFW window" << endl;
 		glfwTerminate();
@@ -31,8 +35,8 @@ int main() {
 	}
 
 	// Initialisation de la scène
-	glm::vec3 cameraPosition(1, 1, 1);
-	Camera    camera(cameraPosition);
+	glm::vec3 cameraPosition(1, 2, 1);
+	Camera    camera(window, cameraPosition);
 	camera.lookAt(0, 0, 0);
 
 	Scene    scene;
@@ -46,21 +50,28 @@ int main() {
 	// Boucle de jeu
 	auto         start = std::chrono::high_resolution_clock::now();
 	unsigned int nbrFrame = 0;
+	auto         localStart = std::chrono::high_resolution_clock::now();
 
 	while (!glfwWindowShouldClose(window)) {
+		glfwPollEvents();
+		nbrFrame++;
+
 		renderer.render();
 		glfwSwapBuffers(window);
 
-		glfwPollEvents();
-		nbrFrame++;
+		auto now = std::chrono::high_resolution_clock::now();
+		auto deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(now - localStart).count();
+		camera.handleKeyControls(deltaTime / 1000.0f);
+		camera.handleMouseControls();
+		localStart = std::chrono::high_resolution_clock::now();
 	}
 
 	auto end = std::chrono::high_resolution_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::seconds>(end - start);
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
 	glfwDestroyWindow(window);
 	glfwTerminate();
 
-	cout << "Average FPS: " << (double)nbrFrame / duration.count() << endl;
+	cout << "Average FPS: " << (double)nbrFrame / duration.count() * 1000 << endl;
 	return 0;
 }
