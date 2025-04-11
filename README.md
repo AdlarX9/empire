@@ -11,18 +11,15 @@ Ce projet se découpe ainsi en 4 étapes :
 
 ## Lancer le projet
 
-Tout d'abord, il vous faut avoir installé les bibliothèques précompilées GLFW et GLM sur votre ordinateur. \
+Tout d'abord, il vous faut avoir installé les bibliothèques précompilées `GLFW` et `GLM` sur votre ordinateur. \
 Ensuite, saisissez la commande suivante :
 
-> `$ g++ -std=c++20 ... src/core/main.cpp src/maths/utils.cpp src/three/main.cpp src/lib/glad.o -o main` \
-> *Note : les `...` représentent ici les flags afin de lier GLFW et GLM au projet.* \
-> *Exemple : `-F/Library/Frameworks -framework GLFW -L/opt/homebrew/include etc`*
+> `$ g++ -std=c++20 ... src/core/main.cpp src/maths/utils.cpp src/three/main.cpp src/opengl/main.cpp src/lib/glad.o -o main`
+> 
+*Note : les `...` représentent ici les flags afin de lier GLFW et GLM au projet.* \
+*Exemple : `-F/Library/Frameworks -framework GLFW -L/opt/homebrew/include etc`*
 
 ## Exemples
 
-<video width="500" height="300" controls>
-  <source src="examples/example.mp4" type="video/mp4">
-  Balise vidéo non supportée.
-</video>
-
-*Exemple du moteur 3D*
+> ![Exemple](examples/main.png) \
+> *Exemple du moteur 3D*

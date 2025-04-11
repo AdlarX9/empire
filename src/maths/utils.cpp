@@ -182,6 +182,23 @@ UnitQuaternion& UnitQuaternion::set(double angle, double x, double y, double z) 
 	return *this;
 }
 
+float UnitQuaternion::getAngle() const {
+	float angle = acos(m_w) * 2;
+	return angle;
+}
+
+glm::vec3 UnitQuaternion::getAxis() const {
+	float angle = this->getAngle();
+	float sin = std::sin(angle);
+
+	if (sin == 0) {
+		return glm::vec3(0, 0, 1);
+	}
+
+	glm::vec3 axis = glm::vec3(m_x / sin, m_y / sin, m_z / sin);
+	return axis;
+}
+
 UnitQuaternion::~UnitQuaternion() {}
 
 

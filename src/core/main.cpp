@@ -47,6 +47,14 @@ int main() {
 	Mesh        cube(cubeGeometry, cubeMaterial);
 	scene.add(&cube);
 
+	PlaneGeometry planeGeometry(5, 5);
+	Material      planeMaterial(0.607, 0.552, 0.447);
+	Mesh          plane(planeGeometry, planeMaterial);
+	scene.add(&plane);
+
+	PointLight pointLight(2, 1, 1);
+	scene.add(&pointLight);
+
 	// Boucle de jeu
 	auto         start = std::chrono::high_resolution_clock::now();
 	unsigned int nbrFrame = 0;

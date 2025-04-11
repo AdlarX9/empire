@@ -63,6 +63,8 @@ class UnitQuaternion : public Quaternion {
 	UnitQuaternion(double angle, glm::vec3 vector3);
 	UnitQuaternion(Quaternion quaternion);
 	UnitQuaternion& set(double angle, double x = 0, double y = 0, double z = 0);
+	glm::vec3       getAxis() const;
+	float           getAngle() const;
 	~UnitQuaternion();
 };
 
