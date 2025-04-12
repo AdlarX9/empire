@@ -42,10 +42,10 @@ int main() {
 	Scene    scene;
 	Renderer renderer(camera, scene);
 
-	BoxGeometry cubeGeometry;
-	Material    cubeMaterial;
-	Mesh        cube(cubeGeometry, cubeMaterial);
-	scene.add(&cube);
+	SphereGeometry sphereGeometry;
+	Material       sphereMaterial(0.2, 1, 0, 1, 2);
+	Mesh           sphere(sphereGeometry, sphereMaterial);
+	scene.add(&sphere);
 
 	PlaneGeometry planeGeometry(5, 5);
 	Material      planeMaterial(0.607, 0.552, 0.447);
@@ -57,6 +57,9 @@ int main() {
 
 	PointLight pointLight2(-2, 0, 2);
 	scene.add(&pointLight2);
+
+	AmbientLight ambientLight(0.1, glm::vec3(1, 0, 0));
+	scene.add(&ambientLight);
 
 	// Boucle de jeu
 	auto         start = std::chrono::high_resolution_clock::now();

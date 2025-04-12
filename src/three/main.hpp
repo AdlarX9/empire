@@ -9,6 +9,7 @@
 #include <GLFW/glfw3.h>
 #include <vector>
 #include <string>
+#include <cmath>
 
 class Geometry {
   protected:
@@ -35,12 +36,17 @@ class Geometry {
 class Material {
   protected:
 	glm::vec4 m_mainColor;
+	float     m_metalness;
 
   public:
-	Material(glm::vec4 color = glm::vec4(1, 1, 1, 1));
-	Material(float r, float g, float b, float a = 0.0f);
-	glm::vec4& getMainColor();
-	Material&  setMainColor(glm::vec4 color);
+	Material(glm::vec4 color = glm::vec4(1, 1, 1, 1), float metalness = 1);
+	Material(float r, float g, float b, float a = 0.0f, float metalness = 1);
+	glm::vec4&      getMainColor();
+	Material&       setMainColor(glm::vec4 color);
+	float           getMetalness() const;
+	Material&       setMetalness(float metalness);
+	void            finalRender(unsigned int faceCount) const;
+	virtual GLuint* getFacesData(unsigned int faceCount) const;
 	~Material();
 };
 
@@ -62,17 +68,8 @@ class Mesh {
 	glm::vec3&      getTranslation();
 	glm::vec3&      getScale();
 	GLfloat*        getVerticesData() const;
-	GLuint*         getFacesData() const;
 
 	~Mesh();
-};
-
-
-struct LightStruct {
-	glm::vec3 position;
-	double    intensity;
-	glm::vec3 color;
-	bool      ambient;
 };
 
 class Light {
@@ -85,11 +82,10 @@ class Light {
   public:
 	Light(glm::vec3 position, double intensity, glm::vec3 color = glm::vec3(1, 1, 1), bool ambient = false);
 
-	virtual struct LightStruct getLight() = 0;
-	glm::vec3&                 getPosition();
-	float                      getIntensity() const;
-	glm::vec3&                 getColor();
-	bool                       getAmbient() const;
+	glm::vec3& getPosition();
+	float      getIntensity() const;
+	glm::vec3& getColor();
+	bool       getAmbient() const;
 
 	~Light();
 };
@@ -110,7 +106,6 @@ class Scene {
 	glm::vec3&           getBackGroundColor();
 	unsigned int         getNbrLights() const;
 	std::vector<Light*>& getLights();
-	LightStruct*         getLightStructs() const;
 	Scene&               setBackGroundColor(glm::vec3 backgroundColor);
 	Scene&               setBackGroundColor(float r, float g, float b);
 	Scene&               add(Mesh* mesh);
@@ -183,6 +178,42 @@ class PlaneGeometry : public Geometry {
 	~PlaneGeometry();
 };
 
+class PyramidGeometry : public Geometry {
+  public:
+	PyramidGeometry(float x = 1, float y = 1, float h = std::sqrt(0.5));
+	~PyramidGeometry();
+};
+
+class TetrahedronGeometry : public Geometry {
+  public:
+	TetrahedronGeometry();
+	~TetrahedronGeometry();
+};
+
+class SphereGeometry : public Geometry {
+  public:
+	SphereGeometry(float radius = 1, unsigned int verticals = 100, unsigned int rows = 100);
+	~SphereGeometry();
+};
+
+
+// Materials
+
+class BasicMaterial : public Material {
+  public:
+	BasicMaterial(glm::vec4 color = glm::vec4(1));
+	BasicMaterial(float r, float g, float b, float a = 1);
+	~BasicMaterial();
+};
+
+class LinesMaterial : public Material {};
+
+class LinesBasicMaterial : public BasicMaterial {};
+
+class PointsMaterial : public Material {};
+
+class PointsBasicMaterial : public BasicMaterial {};
+
 
 // Lumières
 
@@ -190,10 +221,13 @@ class PointLight : public Light {
   public:
 	PointLight(glm::vec3 position = glm::vec3(0, 0, 0), double intensity = 1, glm::vec3 color = glm::vec3(1, 1, 1));
 	PointLight(float x, float y, float z, double intensity = 1, glm::vec3 color = glm::vec3(1, 1, 1));
-
-	struct LightStruct getLight();
-
 	~PointLight();
+};
+
+class AmbientLight : public Light {
+  public:
+	AmbientLight(double intensity = 1, glm::vec3 color = glm::vec3(1, 1, 1));
+	~AmbientLight();
 };
 
 #endif
