@@ -157,13 +157,13 @@ class Renderer {
 	Camera& m_camera;
 	Scene&  m_scene;
 	Shader  m_shader;
-	GLuint  m_shaderProgram;
 
   public:
 	Renderer(Camera& camera, Scene& scene);
 
-	std::string loadShader(const char* path);
-	void        render();
+	void initializeUniforms();
+	void clearScreen();
+	void render();
 
 	~Renderer();
 };

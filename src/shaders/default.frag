@@ -46,7 +46,7 @@ void main() {
 			diffusedLight = max(dot(normal, -incidentRay), 0.);
 			if (diffusedLight > 0 && !behind) {
 				float reflectedLight = pow(max(dot(cameraRay, -reflectedRay), 0.), 5.);
-				intensity += diffusedLight + reflectedLight;
+				intensity += (diffusedLight + reflectedLight) * lightIntensities[i] * 0.4;
 			}
 		}
 	}

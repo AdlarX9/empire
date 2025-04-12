@@ -52,8 +52,11 @@ int main() {
 	Mesh          plane(planeGeometry, planeMaterial);
 	scene.add(&plane);
 
-	PointLight pointLight(2, 1, 1);
-	scene.add(&pointLight);
+	PointLight pointLight1(2, 1, 1);
+	scene.add(&pointLight1);
+
+	PointLight pointLight2(-2, 0, 2);
+	scene.add(&pointLight2);
 
 	// Boucle de jeu
 	auto         start = std::chrono::high_resolution_clock::now();

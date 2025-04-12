@@ -326,55 +326,23 @@ Camera::~Camera() {}
 
 Renderer::Renderer(Camera& camera, Scene& scene)
     : m_camera(camera), m_scene(scene), m_shader(Shader("src/shaders/default.vert", "src/shaders/default.frag")) {
-	m_shaderProgram = m_shader.getShaderProgram();
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 }
 
-string Renderer::loadShader(const char* path) {
-	ifstream in(path, ios::binary);
+void Renderer::initializeUniforms() {
+	m_shader.addUniform("screenWidth", WIDTH);
+	m_shader.addUniform("screenHeight", HEIGHT);
+	m_shader.addUniform("cameraPos", m_camera.getPosition());
 
-	if (in) {
-		string contents;
-		in.seekg(0, ios::end);
-		contents.resize(in.tellg());
-		in.seekg(0, ios::beg);
-		in.read(&contents[0], contents.size());
-		in.close();
-		return contents;
-	} else {
-		cerr << "Error: Could not open shader file " << path << endl;
-		return "";
-	}
-}
-
-void Renderer::render() {
-	glUseProgram(m_shaderProgram);
-
-	// Envoyer la position de la caméra
-	glm::vec3 cameraPos = m_camera.getPosition();
-	GLuint    cameraPosLoc = glGetUniformLocation(m_shaderProgram, "cameraPos");
-	glUniform3f(cameraPosLoc, cameraPos.x, cameraPos.y, cameraPos.z);
-
-	// Définir les matrices de vue et de projection
 	glm::mat4 view = glm::lookAt(m_camera.getPosition(), m_camera.getPosition() + m_camera.getDirection(), glm::vec3(0, 0, 1));
 	glm::mat4 projection = glm::perspective((float)glm::radians((float)m_camera.getFov()), (float)(WIDTH / HEIGHT), 0.1f, 100.0f);
+	m_shader.addUniform("view", view);
+	m_shader.addUniform("projection", projection);
 
-	// Envoyer les matrices de vue et de projection
-	GLuint viewLoc = glGetUniformLocation(m_shaderProgram, "view");
-	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-	GLuint projectionLoc = glGetUniformLocation(m_shaderProgram, "projection");
-	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
-	// Envoyer les dimensions de l'écran
-	GLuint screenWidthLoc = glGetUniformLocation(m_shaderProgram, "screenWidth");
-	glUniform1i(screenWidthLoc, WIDTH);
-	GLuint screenHeightLoc = glGetUniformLocation(m_shaderProgram, "screenHeight");
-	glUniform1i(screenHeightLoc, HEIGHT);
 
 	// Envoyer les lumières
-	GLuint nbrLightsLoc = glGetUniformLocation(m_shaderProgram, "nbrLights");
-	glUniform1ui(nbrLightsLoc, m_scene.getNbrLights());
+	m_shader.addUniform("nbrLights", m_scene.getNbrLights());
 
 	vector<Light*> lights = m_scene.getLights();
 	glm::vec3      positions[MAX_LIGHT];
@@ -396,87 +364,68 @@ void Renderer::render() {
 		ambients[i] = false;
 	}
 
-	GLuint lightPositionsLoc = glGetUniformLocation(m_shaderProgram, "lightPositions");
-	glUniform3fv(lightPositionsLoc, MAX_LIGHT, glm::value_ptr(positions[0]));
-	GLuint lightIntensitiesLoc = glGetUniformLocation(m_shaderProgram, "lightIntensities");
-	glUniform1fv(lightIntensitiesLoc, MAX_LIGHT, intensities);
-	GLuint lightColorsLoc = glGetUniformLocation(m_shaderProgram, "lightColors");
-	glUniform3fv(lightColorsLoc, MAX_LIGHT, glm::value_ptr(colors[0]));
-	GLuint lightAmbientsLoc = glGetUniformLocation(m_shaderProgram, "lightAmbients");
-	glUniform1fv(lightAmbientsLoc, MAX_LIGHT, ambients);
+	m_shader.addUniform("lightPositions", positions, MAX_LIGHT);
+	m_shader.addUniform("lightIntensities", intensities, MAX_LIGHT);
+	m_shader.addUniform("lightColors", colors, MAX_LIGHT);
+	m_shader.addUniform("lightAmbients", ambients, MAX_LIGHT);
+}
 
-
-	// Nettoyer l'écran avec la couleur de fond
+void Renderer::clearScreen() {
 	glm::vec3 backgroundColor = m_scene.getBackGroundColor();
 	glClearColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
 
-	for (Mesh* mesh : m_scene.getMeshes()) {
+
+// Script de rendu
+void Renderer::render() {
+	m_shader.use();
+	this->initializeUniforms();
+	this->clearScreen();
+
+	for (Mesh* mesh: m_scene.getMeshes()) {
+		// Récupérer les données nécessaires
 		Geometry& geometry = mesh->getGeometry();
 		Material& material = mesh->getMaterial();
-
-		// Récupération des données
-		GLfloat* verticesData = mesh->getVerticesData();
-		GLuint*  facesData = mesh->getFacesData();
-
+		GLfloat*  verticesData = mesh->getVerticesData();
+		GLuint*   facesData = mesh->getFacesData();
 		glm::vec4 color = material.getMainColor();
 
-		// Création des objets OpenGL
-		GLuint VAO, VBO, EBO;
-		glGenVertexArrays(1, &VAO);
-		glGenBuffers(1, &VBO);
-		glGenBuffers(1, &EBO);
-
-		glBindVertexArray(VAO);
-
-		size_t faceCount = geometry.faceCount();
-
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, faceCount * 3 * 6 * sizeof(GLfloat), verticesData, GL_STATIC_DRAW);
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, faceCount * 3 * sizeof(GLuint), facesData, GL_STATIC_DRAW);
-
-		// Attribut 0 : Positions des vertices
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*)0);
-		glEnableVertexAttribArray(0);
-
-		// Attribut 1 : Normales
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-		glEnableVertexAttribArray(1);
-
-		// Envoi de la matrice Model
+		// Envoi des uniform personnalisées à l'objet traité
 		glm::mat4 model = glm::mat4(1.0f);
 		model = glm::translate(model, mesh->getTranslation());
 		model = glm::rotate(model, mesh->getRotation().getAngle(), mesh->getRotation().getAxis());
 		model = glm::scale(model, mesh->getScale());
-		GLuint modelLoc = glGetUniformLocation(m_shaderProgram, "model");
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		m_shader.addUniform("model", model);
+		m_shader.addUniform("objectColor", material.getMainColor());
 
-		// Envoi de la couleur de l'objet
-		glm::vec4 objectColor = material.getMainColor();
-		GLuint    objectColorLoc = glGetUniformLocation(m_shaderProgram, "objectColor");
-		glUniform4f(objectColorLoc, objectColor.r, objectColor.g, objectColor.b, objectColor.a);
+		// Création des objets OpenGL
+		VAO VAO;
+		VBO VBO;
+		EBO EBO;
+
+		size_t faceCount = geometry.faceCount();
+		VAO.bind();
+		VBO.bind(faceCount * 3 * 6, verticesData);
+		EBO.bind(faceCount * 3, facesData);
+
+		EBO.addAttribute(0, 3, 0, 6);
+		EBO.addAttribute(1, 3, 3, 6);
 
 		// Rendu
 		glDrawElements(GL_TRIANGLES, geometry.faceCount() * 3, GL_UNSIGNED_INT, 0);
 
 		// Supprimer les données allouées
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-		glDeleteVertexArrays(1, &VAO);
-		glDeleteBuffers(1, &VBO);
-		glDeleteBuffers(1, &EBO);
-		glDisableVertexAttribArray(0);
-		glDisableVertexAttribArray(1);
+		VAO.unBind();
+		VBO.unBind();
+		EBO.unBind();
 
 		delete[] verticesData;
 		delete[] facesData;
 	}
 }
 
-Renderer::~Renderer() { glDeleteProgram(m_shaderProgram); }
+Renderer::~Renderer() {}
 
 
 

@@ -2,7 +2,9 @@
 
 #include "../lib/glad/glad.h"
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <string>
+#include <vector>
 #include <iostream>
 #include <fstream>
 
@@ -69,6 +71,9 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath) {
 	glDeleteShader(fragmentShader);
 }
 
+
+void Shader::use() { glUseProgram(m_shaderProgram); }
+
 string Shader::loadShaderSource(const char* path) const {
 	ifstream in(path, ios::binary);
 
@@ -86,6 +91,127 @@ string Shader::loadShaderSource(const char* path) const {
 	}
 }
 
-GLuint Shader::getShaderProgram() const { return m_shaderProgram; }
+void Shader::addUniform(const char* uniformName, glm::vec3 const& vector) {
+	GLuint uniformLoc = glGetUniformLocation(m_shaderProgram, uniformName);
+	glUniform3f(uniformLoc, vector.x, vector.y, vector.z);
+}
+
+void Shader::addUniform(const char* uniformName, glm::vec4 const& vector) {
+	GLuint uniformLoc = glGetUniformLocation(m_shaderProgram, uniformName);
+	glUniform4f(uniformLoc, vector.x, vector.y, vector.z, vector.w);
+}
+
+void Shader::addUniform(const char* uniformName, glm::mat4 const& matrix) {
+	GLuint uniformLoc = glGetUniformLocation(m_shaderProgram, uniformName);
+	glUniformMatrix4fv(uniformLoc, 1, GL_FALSE, glm::value_ptr(matrix));
+}
+
+void Shader::addUniform(const char* uniformName, unsigned int const& value) {
+	GLuint uniformLoc = glGetUniformLocation(m_shaderProgram, uniformName);
+	glUniform1ui(uniformLoc, value);
+}
+
+void Shader::addUniform(const char* uniformName, int const& value) {
+	GLuint uniformLoc = glGetUniformLocation(m_shaderProgram, uniformName);
+	glUniform1i(uniformLoc, value);
+}
+
+void Shader::addUniform(const char* uniformName, float const& value) {
+	GLuint uniformLoc = glGetUniformLocation(m_shaderProgram, uniformName);
+	glUniform1f(uniformLoc, value);
+}
+
+void Shader::addUniform(const char* uniformName, glm::vec3* const& array, unsigned int size) {
+	GLuint uniformLoc = glGetUniformLocation(m_shaderProgram, uniformName);
+	glUniform3fv(uniformLoc, size, glm::value_ptr(array[0]));
+}
+
+void Shader::addUniform(const char* uniformName, glm::vec4* const& array, unsigned int size) {
+	GLuint uniformLoc = glGetUniformLocation(m_shaderProgram, uniformName);
+	glUniform4fv(uniformLoc, size, glm::value_ptr(array[0]));
+}
+
+void Shader::addUniform(const char* uniformName, unsigned int* const& array, unsigned int size) {
+	GLuint uniformLoc = glGetUniformLocation(m_shaderProgram, uniformName);
+	glUniform1uiv(uniformLoc, size, array);
+}
+
+void Shader::addUniform(const char* uniformName, int* const& array, unsigned int size) {
+	GLuint uniformLoc = glGetUniformLocation(m_shaderProgram, uniformName);
+	glUniform1iv(uniformLoc, size, array);
+}
+
+void Shader::addUniform(const char* uniformName, float* const& array, unsigned int size) {
+	GLuint uniformLoc = glGetUniformLocation(m_shaderProgram, uniformName);
+	glUniform1fv(uniformLoc, size, array);
+}
 
 Shader::~Shader() { glDeleteProgram(m_shaderProgram); }
+
+
+
+/* --- VAO --- */
+
+
+
+VAO::VAO() : m_VAO() { glGenVertexArrays(1, &m_VAO); }
+
+void VAO::bind() { glBindVertexArray(m_VAO); }
+void VAO::unBind() { glBindVertexArray(0); }
+
+VAO::~VAO() { glDeleteVertexArrays(1, &m_VAO); }
+
+
+
+/* --- VAO --- */
+
+
+
+VBO::VBO() : m_VBO() { glGenBuffers(1, &m_VBO); }
+
+void VBO::bind(unsigned int size, GLfloat* data) {
+	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
+	glBufferData(GL_ARRAY_BUFFER, size * sizeof(GLfloat), data, GL_STATIC_DRAW);
+}
+
+void VBO::unBind() { glBindBuffer(GL_ARRAY_BUFFER, 0); }
+
+VBO::~VBO() { glDeleteBuffers(1, &m_VBO); }
+
+
+
+/* --- VAO --- */
+
+
+
+
+EBO::EBO() : m_EBO(), m_attrIndices(vector<GLuint>()) { glGenBuffers(1, &m_EBO); }
+
+void EBO::bind(unsigned int size, GLuint* data) {
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, size * sizeof(GLuint), data, GL_STATIC_DRAW);
+}
+
+void EBO::addAttribute(GLuint index, GLuint size, GLuint offset, GLuint stride, GLenum type, GLboolean normalized) {
+	size_t typeSize;
+	if (type == GL_FLOAT) {
+		typeSize = sizeof(GLfloat);
+	} else if (type == GL_INT) {
+		typeSize = sizeof(GLint);
+	} else if (type == GL_UNSIGNED_INT) {
+		typeSize = sizeof(GLuint);
+	}
+
+	m_attrIndices.push_back(index);
+	glVertexAttribPointer(index, size, type, normalized, stride * typeSize, (GLvoid*)(offset * typeSize));
+	glEnableVertexAttribArray(index);
+}
+
+void EBO::unBind() {
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	for (GLuint index: m_attrIndices) {
+		glDisableVertexAttribArray(index);
+	}
+}
+
+EBO::~EBO() { glDeleteBuffers(1, &m_EBO); }
