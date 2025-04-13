@@ -42,10 +42,12 @@ int main() {
 	Scene    scene;
 	Renderer renderer(camera, scene);
 
-	SphereGeometry sphereGeometry;
-	Material       sphereMaterial(0.2, 1, 0, 1, 2);
+	SphereGeometry sphereGeometry(1, 100, 100);
+	LinesMaterial  sphereMaterial(glm::vec4(0.2, 1, 0, 1));
 	Mesh           sphere(sphereGeometry, sphereMaterial);
 	scene.add(&sphere);
+
+	sphere.translate(0, 0, 1).rotateSelf(90, glm::vec3(0, 1, 0)).rotateScene(45, glm::vec3(0, 0, 1));
 
 	PlaneGeometry planeGeometry(5, 5);
 	Material      planeMaterial(0.607, 0.552, 0.447);

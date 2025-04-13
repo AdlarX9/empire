@@ -21,5 +21,10 @@ Ensuite, saisissez la commande suivante :
 
 ## Exemples
 
-> ![Exemple](examples/main.png) \
-> *Exemple du moteur 3D*
+### Le moteur 3D
+
+> ![Cube](examples/cube.png) \
+> *Un cube intersectant un plan*
+
+> ![Sphere](examples/sphere.png) \
+> *Une sphère UV en squelette*

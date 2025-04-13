@@ -61,16 +61,23 @@ Material& Material::setMetalness(float metalness) {
 	return *this;
 }
 
-void Material::finalRender(unsigned int faceCount) const { glDrawElements(GL_TRIANGLES, faceCount * 3, GL_UNSIGNED_INT, 0); }
+void Material::finalRender(unsigned int faceCount) const {
+	glDrawElements(GL_TRIANGLES, this->alterFaceCount(faceCount), GL_UNSIGNED_INT, 0);
+}
 
 GLuint* Material::getFacesData(unsigned int faceCount) const {
-	GLuint* facesData = new GLuint[faceCount * 3];
+	GLuint* facesData = new GLuint[this->alterFaceCount(faceCount)];
 
 	for (unsigned int i = 0; i < faceCount * 3; i++) {
 		facesData[i] = i;
 	}
 
 	return facesData;
+}
+
+unsigned int Material::alterFaceCount(unsigned int faceCount) const {
+	unsigned int newFaceCount = faceCount * 3;
+	return newFaceCount;
 }
 
 Material::~Material() {}
@@ -117,6 +124,39 @@ GLfloat* Mesh::getVerticesData() const {
 	}
 
 	return data;
+}
+
+unsigned int Mesh::faceCount() const { return m_material.alterFaceCount(m_geometry.faceCount()); }
+
+
+Mesh& Mesh::translate(glm::vec3 translation) {
+	m_translation += translation;
+	return *this;
+}
+
+Mesh& Mesh::translate(float dx, float dy, float dz) {
+	this->translate(glm::vec3(dx, dy, dz));
+	return *this;
+}
+
+Mesh& Mesh::rotateSelf(UnitQuaternion rotation) {
+	m_rotation *= rotation;
+	return *this;
+}
+
+Mesh& Mesh::rotateSelf(float angle, glm::vec3(axis)) {
+	this->rotateSelf(UnitQuaternion(angle, axis));
+	return *this;
+}
+
+Mesh& Mesh::rotateScene(UnitQuaternion rotation) {
+	m_rotation = rotation * m_rotation;
+	return *this;
+}
+
+Mesh& Mesh::rotateScene(float angle, glm::vec3(axis)) {
+	this->rotateScene(UnitQuaternion(angle, axis));
+	return *this;
 }
 
 Mesh::~Mesh() {}
@@ -382,6 +422,8 @@ void Renderer::render() {
 		model = glm::rotate(model, mesh->getRotation().getAngle(), mesh->getRotation().getAxis());
 		model = glm::scale(model, mesh->getScale());
 		m_shader.addUniform("model", model);
+		glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), mesh->getRotation().getAngle(), mesh->getRotation().getAxis());
+		m_shader.addUniform("rotation", rotation);
 		m_shader.addUniform("objectColor", material.getMainColor());
 		m_shader.addUniform("objectMetalness", material.getMetalness());
 
@@ -390,10 +432,10 @@ void Renderer::render() {
 		VBO VBO;
 		EBO EBO;
 
-		size_t faceCount = geometry.faceCount();
+		unsigned int faceCount = mesh->faceCount();
 		VAO.bind();
-		VBO.bind(faceCount * 3 * 6, verticesData);
-		EBO.bind(faceCount * 3, facesData);
+		VBO.bind(faceCount * 6, verticesData);
+		EBO.bind(faceCount, facesData);
 
 		EBO.addAttribute(0, 3, 0, 6);
 		EBO.addAttribute(1, 3, 3, 6);
@@ -717,6 +759,82 @@ SphereGeometry::~SphereGeometry() {}
 BasicMaterial::BasicMaterial(glm::vec4 color) : Material::Material(color, 0) {}
 BasicMaterial::BasicMaterial(float r, float g, float b, float a) : Material::Material(r, g, b, a, 0) {}
 BasicMaterial::~BasicMaterial() {}
+
+
+
+/* --- LINESMATERIAL --- */
+
+
+
+LinesMaterial::LinesMaterial(glm::vec4 color, float metalness) : Material::Material(color, metalness) {}
+
+LinesMaterial::LinesMaterial(float r, float g, float b, float metalness) : Material::Material(r, g, b, 1, metalness) {}
+
+void LinesMaterial::finalRender(unsigned int faceCount) const {
+	glDrawElements(GL_LINES, this->alterFaceCount(faceCount), GL_UNSIGNED_INT, 0);
+}
+
+GLuint* LinesMaterial::getFacesData(unsigned int faceCount) const {
+	GLuint* facesData = new GLuint[this->alterFaceCount(faceCount)];
+
+	for (unsigned int i = 0; i < faceCount; i++) {
+		facesData[i * 6 + 0] = i * 3;
+		facesData[i * 6 + 1] = i * 3 + 1;
+		facesData[i * 6 + 2] = i * 3 + 1;
+		facesData[i * 6 + 3] = i * 3 + 2;
+		facesData[i * 6 + 4] = i * 3 + 2;
+		facesData[i * 6 + 5] = i * 3;
+	}
+
+	return facesData;
+}
+
+unsigned int LinesMaterial::alterFaceCount(unsigned int faceCount) const { return faceCount * 6; }
+
+
+LinesMaterial::~LinesMaterial() {}
+
+
+
+/* --- LINESBASICMATERIAL --- */
+
+
+
+LinesBasicMaterial::LinesBasicMaterial(glm::vec4 color) : LinesMaterial::LinesMaterial(color, 0) {}
+
+LinesBasicMaterial::LinesBasicMaterial(float r, float g, float b) : LinesMaterial::LinesMaterial(r, g, b, 0) {}
+
+
+LinesBasicMaterial::~LinesBasicMaterial() {}
+
+
+
+/* --- POINTSMATERIAL --- */
+
+
+
+PointsMaterial::PointsMaterial(glm::vec4 color, float metalness) : Material::Material(color, metalness) {}
+
+PointsMaterial::PointsMaterial(float r, float g, float b, float metalness) : Material::Material(r, g, b, 1, metalness) {}
+
+void PointsMaterial::finalRender(unsigned int faceCount) const {
+	glDrawElements(GL_POINTS, this->alterFaceCount(faceCount), GL_UNSIGNED_INT, 0);
+}
+
+PointsMaterial::~PointsMaterial() {}
+
+
+
+/* --- POINTSBASICMATERIAL --- */
+
+
+
+PointsBasicMaterial::PointsBasicMaterial(glm::vec4 color) : PointsMaterial::PointsMaterial(color, 0) {}
+
+PointsBasicMaterial::PointsBasicMaterial(float r, float g, float b) : PointsMaterial::PointsMaterial(r, g, b, 0) {}
+
+
+PointsBasicMaterial::~PointsBasicMaterial() {}
 
 
 

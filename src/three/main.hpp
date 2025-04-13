@@ -41,12 +41,15 @@ class Material {
   public:
 	Material(glm::vec4 color = glm::vec4(1, 1, 1, 1), float metalness = 1);
 	Material(float r, float g, float b, float a = 0.0f, float metalness = 1);
-	glm::vec4&      getMainColor();
-	Material&       setMainColor(glm::vec4 color);
-	float           getMetalness() const;
-	Material&       setMetalness(float metalness);
-	void            finalRender(unsigned int faceCount) const;
-	virtual GLuint* getFacesData(unsigned int faceCount) const;
+
+	glm::vec4&           getMainColor();
+	Material&            setMainColor(glm::vec4 color);
+	float                getMetalness() const;
+	Material&            setMetalness(float metalness);
+	virtual void         finalRender(unsigned int faceCount) const;
+	virtual GLuint*      getFacesData(unsigned int faceCount) const;
+	virtual unsigned int alterFaceCount(unsigned int faceCount) const;
+
 	~Material();
 };
 
@@ -68,6 +71,13 @@ class Mesh {
 	glm::vec3&      getTranslation();
 	glm::vec3&      getScale();
 	GLfloat*        getVerticesData() const;
+	unsigned int    faceCount() const;
+	Mesh&           translate(glm::vec3 translation);
+	Mesh&           translate(float dx, float dy, float dz);
+	Mesh&           rotateSelf(UnitQuaternion rotation);
+	Mesh&           rotateSelf(float angle, glm::vec3(axis));
+	Mesh&           rotateScene(UnitQuaternion rotation);
+	Mesh&           rotateScene(float angle, glm::vec3(axis));
 
 	~Mesh();
 };
@@ -192,7 +202,7 @@ class TetrahedronGeometry : public Geometry {
 
 class SphereGeometry : public Geometry {
   public:
-	SphereGeometry(float radius = 1, unsigned int verticals = 100, unsigned int rows = 100);
+	SphereGeometry(float radius = 1, unsigned int verticals = 20, unsigned int rows = 20);
 	~SphereGeometry();
 };
 
@@ -206,13 +216,41 @@ class BasicMaterial : public Material {
 	~BasicMaterial();
 };
 
-class LinesMaterial : public Material {};
+class LinesMaterial : public Material {
+  public:
+	LinesMaterial(glm::vec4 color = glm::vec4(1), float metalness = 1);
+	LinesMaterial(float r, float g, float b, float metalness = 1);
 
-class LinesBasicMaterial : public BasicMaterial {};
+	void         finalRender(unsigned int faceCount) const;
+	GLuint*      getFacesData(unsigned int faceCount) const;
+	unsigned int alterFaceCount(unsigned int faceCount) const;
 
-class PointsMaterial : public Material {};
+	~LinesMaterial();
+};
 
-class PointsBasicMaterial : public BasicMaterial {};
+class LinesBasicMaterial : public LinesMaterial {
+  public:
+	LinesBasicMaterial(glm::vec4 color = glm::vec4(1));
+	LinesBasicMaterial(float r, float g, float b);
+	~LinesBasicMaterial();
+};
+
+class PointsMaterial : public Material {
+  public:
+	PointsMaterial(glm::vec4 color = glm::vec4(1), float metalness = 1);
+	PointsMaterial(float r, float g, float b, float metalness = 1);
+
+	void finalRender(unsigned int faceCount) const;
+
+	~PointsMaterial();
+};
+
+class PointsBasicMaterial : public PointsMaterial {
+  public:
+	PointsBasicMaterial(glm::vec4 color = glm::vec4(1));
+	PointsBasicMaterial(float r, float g, float b);
+	~PointsBasicMaterial();
+};
 
 
 // Lumières
