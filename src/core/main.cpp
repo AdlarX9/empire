@@ -8,7 +8,6 @@
 
 #include <chrono>
 #include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
 #include <iostream>
 
 #include "../maths/utils.hpp"
@@ -37,7 +36,7 @@ int main() {
 	// Initialisation de la scène
 	glm::vec3 cameraPosition(1, 2, 1);
 	Camera    camera(window, cameraPosition);
-	camera.lookAt(0, 0, 0);
+	camera.lookAt(0, 0, 1.2);
 
 	Scene    scene;
 	Renderer renderer(camera, scene);
@@ -47,7 +46,7 @@ int main() {
 	Mesh           sphere(sphereGeometry, sphereMaterial);
 	scene.add(&sphere);
 
-	sphere.translate(0, 0, 1).rotateSelf(90, glm::vec3(0, 1, 0)).rotateScene(45, glm::vec3(0, 0, 1));
+	sphere.translate(0, 0, 1.2).rotateSelf(90, glm::vec3(0, 1, 0)).rotateScene(45, glm::vec3(0, 0, 1));
 
 	PlaneGeometry planeGeometry(5, 5);
 	Material      planeMaterial(0.607, 0.552, 0.447);
@@ -57,16 +56,16 @@ int main() {
 	PointLight pointLight1(2, 1, 1);
 	scene.add(&pointLight1);
 
-	PointLight pointLight2(-2, 0, 2);
+	PointLight pointLight2(-2, 0, 2, 2);
 	scene.add(&pointLight2);
 
-	AmbientLight ambientLight(0.1, glm::vec3(1, 0, 0));
+	AmbientLight ambientLight(0.1, glm::vec3(1, 1, 1));
 	scene.add(&ambientLight);
 
 	// Boucle de jeu
-	auto         start = std::chrono::high_resolution_clock::now();
+	auto         start = chrono::high_resolution_clock::now();
 	unsigned int nbrFrame = 0;
-	auto         localStart = std::chrono::high_resolution_clock::now();
+	auto         localStart = chrono::high_resolution_clock::now();
 
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
@@ -75,15 +74,15 @@ int main() {
 		renderer.render();
 		glfwSwapBuffers(window);
 
-		auto now = std::chrono::high_resolution_clock::now();
-		auto deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(now - localStart).count();
+		auto now = chrono::high_resolution_clock::now();
+		auto deltaTime = chrono::duration_cast<chrono::milliseconds>(now - localStart).count();
 		camera.handleKeyControls(deltaTime / 1000.0f);
 		camera.handleMouseControls();
-		localStart = std::chrono::high_resolution_clock::now();
+		localStart = chrono::high_resolution_clock::now();
 	}
 
-	auto end = std::chrono::high_resolution_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	auto end = chrono::high_resolution_clock::now();
+	auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
 
 	glfwDestroyWindow(window);
 	glfwTerminate();

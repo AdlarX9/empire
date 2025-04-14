@@ -68,7 +68,9 @@ class Mesh {
 	Geometry&       getGeometry();
 	Material&       getMaterial();
 	UnitQuaternion& getRotation();
+	Mesh&           setRotation(UnitQuaternion& rotation);
 	glm::vec3&      getTranslation();
+	Mesh&           setTranslation(glm::vec3& translation);
 	glm::vec3&      getScale();
 	GLfloat*        getVerticesData() const;
 	unsigned int    faceCount() const;

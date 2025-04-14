@@ -17,6 +17,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <algorithm>
 
 using namespace std;
 
@@ -96,6 +97,16 @@ Material&       Mesh::getMaterial() { return m_material; }
 UnitQuaternion& Mesh::getRotation() { return m_rotation; }
 glm::vec3&      Mesh::getTranslation() { return m_translation; }
 glm::vec3&      Mesh::getScale() { return m_scale; }
+
+Mesh& Mesh::setRotation(UnitQuaternion& rotation) {
+	m_rotation = rotation;
+	return *this;
+}
+
+Mesh& Mesh::setTranslation(glm::vec3& translation) {
+	m_translation = translation;
+	return *this;
+}
 
 GLfloat* Mesh::getVerticesData() const {
 	unsigned int nbrVectors = 2;  // Vertices + normales
@@ -204,7 +215,9 @@ Scene& Scene::setBackGroundColor(float r, float g, float b) {
 }
 
 Scene& Scene::add(Mesh* mesh) {
-	m_meshes.push_back(mesh);
+	if (std::find(m_meshes.begin(), m_meshes.end(), mesh) == m_meshes.end()) {
+		m_meshes.push_back(mesh);
+	}
 	return *this;
 }
 
@@ -217,7 +230,9 @@ Scene& Scene::remove(Mesh* mesh) {
 }
 
 Scene& Scene::add(Light* light) {
-	m_lights.push_back(light);
+	if (std::find(m_lights.begin(), m_lights.end(), light) == m_lights.end()) {
+		m_lights.push_back(light);
+	}
 	return *this;
 }
 
