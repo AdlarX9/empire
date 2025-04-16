@@ -161,13 +161,20 @@ Mesh& Mesh::rotateSelf(float angle, glm::vec3(axis)) {
 }
 
 Mesh& Mesh::rotateScene(UnitQuaternion rotation) {
-	m_rotation = rotation * m_rotation;
+	if (rotation.squaredLength() > 0.9) {
+		m_rotation = rotation * m_rotation;
+	}
 	return *this;
 }
 
 Mesh& Mesh::rotateScene(float angle, glm::vec3(axis)) {
 	this->rotateScene(UnitQuaternion(angle, axis));
 	return *this;
+}
+
+glm::vec3 Mesh::transform(glm::vec3 point) const {
+	glm::vec3 newPoint = (m_rotation * point * m_rotation.getConjugate()).getVector() + m_translation;
+	return newPoint;
 }
 
 Mesh::~Mesh() {}

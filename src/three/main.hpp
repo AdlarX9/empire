@@ -80,6 +80,7 @@ class Mesh {
 	Mesh&           rotateSelf(float angle, glm::vec3(axis));
 	Mesh&           rotateScene(UnitQuaternion rotation);
 	Mesh&           rotateScene(float angle, glm::vec3(axis));
+	glm::vec3       transform(glm::vec3 point) const;
 
 	~Mesh();
 };

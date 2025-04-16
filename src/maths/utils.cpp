@@ -199,6 +199,33 @@ glm::vec3 UnitQuaternion::getAxis() const {
 	return axis;
 }
 
+UnitQuaternion UnitQuaternion::slerp(UnitQuaternion const& quaternion1, UnitQuaternion const& quaternion2, float t) const {
+	UnitQuaternion q1 = quaternion1;
+	UnitQuaternion q2 = quaternion2;
+
+	float dot = q1.dot(q2);  // cosinus de l'angle
+	if (dot < 0.0f) {        // pour prendre le plus court chemin sur la sphère
+		q2 *= -1;
+		dot *= -1;
+	}
+
+	if (dot > 0.999999999f) {
+		return q1;
+	}
+
+	// Calcul de l'angle entre les deux quaternions
+	float theta_0 = std::acos(dot);  // angle initial
+	float theta = theta_0 * t;       // angle interpolé
+
+	float sin_theta = std::sin(theta);
+	float sin_theta_0 = std::sin(theta_0);
+
+	float s1 = std::cos(theta) - dot * sin_theta / sin_theta_0;
+	float s2 = sin_theta / sin_theta_0;
+
+	return (q1 * s1 + q2 * s2).normalize();
+}
+
 UnitQuaternion::~UnitQuaternion() {}
 
 
