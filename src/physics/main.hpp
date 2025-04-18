@@ -36,20 +36,6 @@ class Force {
 	~Force();
 };
 
-class Torque {
-  private:
-	glm::vec3      m_position;
-	UnitQuaternion m_rotation;
-
-  public:
-	Torque(glm::vec3 position = glm::vec3(0), UnitQuaternion rotation = UnitQuaternion());
-
-	glm::vec3      getPosition() const;
-	UnitQuaternion getRotation() const;
-
-	~Torque();
-};
-
 class Mass {
   private:
 	float     m_mass;
@@ -105,6 +91,7 @@ class Solid {
 	float     getTotalMass() const;
 	glm::vec3 getInertiaCenter() const;
 	glm::mat3 getInertiaTensor() const;
+	glm::mat3 getInertiaTensorWorld(UnitQuaternion rotation) const;
 
 	glm::vec3 getResultantForce() const;
 	glm::vec3 getSpeedVector() const;
@@ -115,9 +102,12 @@ class Solid {
 	void calculateInertiaCenter();
 	void calculateInertiaTensor();
 
+	Solid& setSpeedVector(glm::vec3 speedVector);
+	Solid& setAngularMomentum(glm::vec3 angularMomentum);
+
 	Solid&      applyForce(Force const& force, UnitQuaternion rotation);
 	glm::mat2x3 getWrench(Force const& force, UnitQuaternion rotation) const;
-	Solid&      applyWrench(glm::mat2x3 wrench);
+	Solid&      applyWrench(glm::mat2x3 wrench, glm::mat3 rotationMatrix);
 	Solid&      integrate(double deltaTime);
 
 	~Solid();
@@ -142,8 +132,6 @@ class WorldObject {
 
 class Joint {
   protected:
-	static float springConstant;
-	static float dampingConstant;
 	WorldObject* m_worldObject1;
 	glm::vec3    m_wO1Contact;
 	WorldObject* m_worldObject2;

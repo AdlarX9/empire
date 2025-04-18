@@ -44,19 +44,6 @@ Force::~Force() {}
 
 
 
-/* --- TORQUE --- */
-
-
-
-Torque::Torque(glm::vec3 position, UnitQuaternion rotation) : m_position(position), m_rotation(rotation) {}
-
-glm::vec3      Torque::getPosition() const { return m_position; }
-UnitQuaternion Torque::getRotation() const { return m_rotation; }
-
-Torque::~Torque() {}
-
-
-
 /* --- MASS --- */
 
 
@@ -122,7 +109,11 @@ glm::vec3 Solid::getResultantForce() const { return m_resultantForce; }
 glm::vec3 Solid::getSpeedVector() const { return m_speedVector; }
 glm::vec3 Solid::getTorque() const { return m_torque; }
 glm::vec3 Solid::getAngularMomentum() const { return m_angularMomentum; }
-glm::vec3 Solid::getAngularSpeed() const { return glm::inverse(m_inertiaTensor) * m_angularMomentum; }
+
+glm::vec3 Solid::getAngularSpeed() const {
+	glm::vec3 angularSpeed = glm::inverse(m_inertiaTensor) * m_angularMomentum;
+	return angularSpeed;
+}
 
 void Solid::calculateInertiaCenter() {
 	m_inertiaCenter = glm::vec3(0);
@@ -157,9 +148,20 @@ void Solid::calculateInertiaTensor() {
 	}
 }
 
+
+Solid& Solid::setSpeedVector(glm::vec3 speedVector) {
+	m_speedVector = speedVector;
+	return *this;
+}
+
+Solid& Solid::setAngularMomentum(glm::vec3 angularMomentum) {
+	m_angularMomentum = angularMomentum;
+	return *this;
+}
+
 Solid& Solid::applyForce(Force const& force, UnitQuaternion rotation) {
 	glm::mat2x3 wrench = this->getWrench(force, rotation);
-	this->applyWrench(wrench);
+	this->applyWrench(wrench, rotation.getMatrix());
 	return *this;
 }
 
@@ -169,7 +171,7 @@ glm::mat2x3 Solid::getWrench(Force const& force, UnitQuaternion rotation) const 
 	return glm::mat2x3(glm::vec3(force.getDirection()), glm::vec3(glm::cross(globalReferential, force.getDirection())));
 }
 
-Solid& Solid::applyWrench(glm::mat2x3 wrench) {
+Solid& Solid::applyWrench(glm::mat2x3 wrench, glm::mat3 rotationMatrix) {
 	m_resultantForce += wrench[0];
 	m_torque += wrench[1];
 	return *this;
@@ -207,7 +209,7 @@ WorldObject& WorldObject::update(double deltaTime) {
 	m_mesh.translate(m_solid.getSpeedVector() * (float)deltaTime);
 	glm::vec3 angularSpeed = m_solid.getAngularSpeed();
 	float     norm = glm::length(angularSpeed);
-	m_mesh.rotateSelf(norm * deltaTime / M_PI * 180, angularSpeed);
+	m_mesh.rotateScene(norm * deltaTime / M_PI * 180, angularSpeed);
 	return *this;
 }
 
@@ -218,9 +220,6 @@ WorldObject::~WorldObject() {}
 /* --- JOINT --- */
 
 
-
-float Joint::springConstant = 100;
-float Joint::dampingConstant = 20;
 
 Joint::Joint(WorldObject* worldObject1, glm::vec3 wO1Contact, WorldObject* worldObject2, glm::vec3 wO2Contact)
     : m_worldObject1(worldObject1), m_wO1Contact(wO1Contact), m_worldObject2(worldObject2), m_wO2Contact(wO2Contact), m_twist() {}
@@ -341,6 +340,10 @@ BallJoint::BallJoint(WorldObject* worldObject1, glm::vec3 wO1Contact, WorldObjec
 }
 
 void BallJoint::applyConstraints(double deltaTime) {
+	if (deltaTime <= 0) {
+		return;
+	}
+
 	UnitQuaternion rotation1 = m_worldObject1->getMesh().getRotation();
 	UnitQuaternion rotation2 = m_worldObject2->getMesh().getRotation();
 
@@ -350,17 +353,36 @@ void BallJoint::applyConstraints(double deltaTime) {
 	float          t = mass2 / totalMass;
 	UnitQuaternion averageRotation = rotation1.slerp(rotation1, rotation2, t);
 
-	m_worldObject1->getMesh().rotateScene(averageRotation * rotation1.getConjugate());
-	m_worldObject2->getMesh().rotateScene(averageRotation * rotation2.getConjugate());
+	UnitQuaternion deltaRotation1 = averageRotation * rotation1.getConjugate();
+	UnitQuaternion deltaRotation2 = averageRotation * rotation2.getConjugate();
+	m_worldObject1->getMesh().rotateScene(deltaRotation1);
+	m_worldObject2->getMesh().rotateScene(deltaRotation2);
 
 	glm::vec3 point1 = m_worldObject1->getMesh().transform(m_wO1Contact);
 	glm::vec3 point2 = m_worldObject2->getMesh().transform(m_wO2Contact);
 
 	glm::vec3 middlePoint = (mass1 * point1 + mass2 * point2) / totalMass;
 
-	m_worldObject1->getMesh().translate(middlePoint - point1);
-	m_worldObject2->getMesh().translate(middlePoint - point2);
-}
+	glm::vec3 translation1 = middlePoint - point1;
+	glm::vec3 translation2 = middlePoint - point2;
+	m_worldObject1->getMesh().translate(translation1);
+	m_worldObject2->getMesh().translate(translation2);
 
+	glm::vec3 f = m_worldObject1->getSolid().getAngularMomentum();
+	cout << f << endl;
+
+	m_worldObject1->getSolid().setSpeedVector(m_worldObject1->getSolid().getSpeedVector() + translation1 / (float)deltaTime);
+	m_worldObject2->getSolid().setSpeedVector(m_worldObject2->getSolid().getSpeedVector() + translation2 / (float)deltaTime);
+
+	deltaRotation1 = rotation1.getConjugate() * averageRotation;
+	deltaRotation2 = rotation2.getConjugate() * averageRotation;
+	glm::vec3 deltaAngularSpeed1 = glm::normalize(deltaRotation1.getAxis()) * (float)(deltaRotation1.getAngle() / deltaTime);
+	glm::vec3 deltaAngularSpeed2 = glm::normalize(deltaRotation2.getAxis()) * (float)(deltaRotation2.getAngle() / deltaTime);
+
+	m_worldObject1->getSolid().setAngularMomentum(m_worldObject1->getSolid().getAngularMomentum() +
+	                                              m_worldObject1->getSolid().getInertiaTensor() * deltaAngularSpeed1);
+	m_worldObject2->getSolid().setAngularMomentum(m_worldObject2->getSolid().getAngularMomentum() +
+	                                              m_worldObject2->getSolid().getInertiaTensor() * deltaAngularSpeed2);
+}
 
 BallJoint::~BallJoint() {}

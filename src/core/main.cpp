@@ -86,19 +86,19 @@ double firstPhysicsScene(GLFWwindow* window) {
 
 	Renderer renderer(camera, scene);
 
-	PlaneGeometry planeGeometry(1, 6);
-	Material      planeMaterial1(0.8, 0.2, 0);
-	Material      planeMaterial2(0.2, 0.8, 0);
-	Mesh          plane1(planeGeometry, planeMaterial1);
-	Mesh          plane2(planeGeometry, planeMaterial2);
-	plane1.translate(-3, -6.01, 1);
+	BoxGeometry stickGeometry(1, 6);
+	Material    stickMaterial1(glm::vec4(0.8, 0.2, 0, 1), 1.5);
+	Material    stickMaterial2(glm::vec4(0.2, 0.8, 0, 1), 1.5);
+	Mesh        stick1(stickGeometry, stickMaterial1);
+	Mesh        stick2(stickGeometry, stickMaterial2);
+	stick1.translate(-3, -6.01, 1);
 
-	vector<Mass> masses = {Mass(1, glm::vec3(-0.5, 3, 0)), Mass(1, glm::vec3(0.5, 3, 0)), Mass(1, glm::vec3(0, -3, 0))};
+	vector<Mass> masses = {Mass(1, glm::vec3(-0.5, 0.5, 0)), Mass(1, glm::vec3(0.5, 0.5, 0)), Mass(1, glm::vec3(0, -0.5, 0))};
 	Solid        solid1(masses);
 	Solid        solid2(masses);
 
-	WorldObject worldObject1({}, solid1, plane1);
-	WorldObject worldObject2({}, solid2, plane2);
+	WorldObject worldObject1({}, solid1, stick1);
+	WorldObject worldObject2({}, solid2, stick2);
 
 	BallJoint joint(&worldObject1, glm::vec3(0, 3, 0), &worldObject2, glm::vec3(0, -3, 0));
 
@@ -106,9 +106,9 @@ double firstPhysicsScene(GLFWwindow* window) {
 	planet.add(&skeleton);
 
 	// Lumières
-	PointLight pointLight1(2, 1, 1);
+	PointLight pointLight1(glm::vec3(2, 1, 1), 2);
 	scene.add(&pointLight1);
-	PointLight pointLight2(-2, 0, 2, 2);
+	PointLight pointLight2(glm::vec3(-2, 0, 2), 2);
 	scene.add(&pointLight2);
 	AmbientLight ambientLight(0.1, glm::vec3(1, 1, 1));
 	scene.add(&ambientLight);
@@ -122,8 +122,8 @@ double firstPhysicsScene(GLFWwindow* window) {
 		glfwPollEvents();
 		nbrFrame++;
 
-		solid1.applyForce(Force(glm::vec3(0, -3, 0), glm::vec3(-5, 0, 1)), plane1.getRotation());
-		solid2.applyForce(Force(glm::vec3(0, 3, 0), glm::vec3(5, 0, -1)), plane1.getRotation());
+		solid1.applyForce(Force(glm::vec3(0, -3, 0), glm::vec3(-8, 0, 1)), worldObject1.getMesh().getRotation());
+		solid2.applyForce(Force(glm::vec3(0, 3, 0), glm::vec3(8, 0, -1)), worldObject2.getMesh().getRotation());
 		planet.update();
 		renderer.render();
 		glfwSwapBuffers(window);

@@ -1,6 +1,9 @@
 #include "utils.hpp"
 
 #include <glm/glm.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -77,6 +80,12 @@ double Quaternion::dot(Quaternion const& quaternion) const {
 
 glm::vec4 Quaternion::getValue() const { return glm::vec4(m_x, m_y, m_z, m_w); }
 glm::vec3 Quaternion::getVector() const { return glm::vec3(m_x, m_y, m_z); }
+
+glm::mat3 Quaternion::getMatrix() const {
+	glm::quat q(m_x, m_y, m_z, m_w);
+	glm::mat3 matrix = glm::toMat3(q);
+	return matrix;
+}
 
 
 Quaternion& Quaternion::operator*=(Quaternion const& q) {
@@ -169,6 +178,7 @@ UnitQuaternion::UnitQuaternion(double angle, double x, double y, double z)
 	this->normalize();
 }
 
+
 UnitQuaternion::UnitQuaternion(Quaternion q) : Quaternion::Quaternion(q.x(), q.y(), q.z(), q.w()) { this->normalize(); }
 UnitQuaternion::UnitQuaternion(double angle, glm::vec3 vector3) : UnitQuaternion::UnitQuaternion(angle, vector3.x, vector3.y, vector3.z) {}
 
@@ -181,6 +191,8 @@ UnitQuaternion& UnitQuaternion::set(double angle, double x, double y, double z) 
 	this->normalize();
 	return *this;
 }
+
+UnitQuaternion& UnitQuaternion::set(double angle, glm::vec3 axis) { return this->set(angle, axis.x, axis.y, axis.z); }
 
 float UnitQuaternion::getAngle() const {
 	float angle = acos(m_w) * 2;

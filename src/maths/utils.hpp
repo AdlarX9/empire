@@ -33,6 +33,7 @@ class Quaternion {
 	double              dot(Quaternion const& quaternion) const;
 	glm::vec4           getValue() const;
 	glm::vec3           getVector() const;
+	glm::mat3           getMatrix() const;
 
 	void print(std::ostream& flow) const;
 
@@ -63,6 +64,7 @@ class UnitQuaternion : public Quaternion {
 	UnitQuaternion(double angle, glm::vec3 vector3);
 	UnitQuaternion(Quaternion quaternion);
 	UnitQuaternion& set(double angle, double x = 0, double y = 0, double z = 0);
+	UnitQuaternion& set(double angle, glm::vec3 axis);
 	glm::vec3       getAxis() const;
 	float           getAngle() const;
 	UnitQuaternion  slerp(UnitQuaternion const& quaternion1, UnitQuaternion const& quaternion2, float t) const;
