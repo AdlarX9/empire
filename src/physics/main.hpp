@@ -107,7 +107,7 @@ class Solid {
 
 	Solid&      applyForce(Force const& force, UnitQuaternion rotation);
 	glm::mat2x3 getWrench(Force const& force, UnitQuaternion rotation) const;
-	Solid&      applyWrench(glm::mat2x3 wrench, glm::mat3 rotationMatrix);
+	Solid&      applyWrench(glm::mat2x3 wrench, glm::mat3 rotationMatrix, glm::vec3 point);
 	Solid&      integrate(double deltaTime);
 
 	~Solid();

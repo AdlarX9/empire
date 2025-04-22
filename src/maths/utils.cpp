@@ -238,6 +238,8 @@ UnitQuaternion UnitQuaternion::slerp(UnitQuaternion const& quaternion1, UnitQuat
 	return (q1 * s1 + q2 * s2).normalize();
 }
 
+glm::vec3 UnitQuaternion::rotate(glm::vec3 point) const { return (*this * point * this->getConjugate()).getVector(); }
+
 UnitQuaternion::~UnitQuaternion() {}
 
 

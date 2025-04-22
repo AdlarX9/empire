@@ -68,6 +68,7 @@ class UnitQuaternion : public Quaternion {
 	glm::vec3       getAxis() const;
 	float           getAngle() const;
 	UnitQuaternion  slerp(UnitQuaternion const& quaternion1, UnitQuaternion const& quaternion2, float t) const;
+	glm::vec3       rotate(glm::vec3 point) const;
 	~UnitQuaternion();
 };
 

@@ -150,12 +150,13 @@ Mesh& Mesh::translate(float dx, float dy, float dz) {
 	return *this;
 }
 
-Mesh& Mesh::rotateSelf(UnitQuaternion rotation) {
+Mesh& Mesh::rotateSelf(UnitQuaternion rotation, glm::vec3 point) {
 	m_rotation *= rotation;
+	m_translation += m_rotation.rotate(-point) + point;
 	return *this;
 }
 
-Mesh& Mesh::rotateSelf(float angle, glm::vec3(axis)) {
+Mesh& Mesh::rotateSelf(float angle, glm::vec3(axis), glm::vec3 point) {
 	this->rotateSelf(UnitQuaternion(angle, axis));
 	return *this;
 }
@@ -174,6 +175,12 @@ Mesh& Mesh::rotateScene(float angle, glm::vec3(axis)) {
 
 glm::vec3 Mesh::transform(glm::vec3 point) const {
 	glm::vec3 newPoint = (m_rotation * point * m_rotation.getConjugate()).getVector() + m_translation;
+	return newPoint;
+}
+
+glm::vec3 Mesh::invertTransform(glm::vec3 point) const {
+	glm::vec3 newPoint = point - m_translation;
+	newPoint = (m_rotation.getConjugate() * newPoint * m_rotation).getVector();
 	return newPoint;
 }
 
