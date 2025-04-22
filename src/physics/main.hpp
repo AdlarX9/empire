@@ -73,54 +73,62 @@ class BoundingBox {
 	~BoundingBox();
 };
 
+// L'ensemble des calculs effectués dans cette classe se feront dans le repère local de l'objet
 class Solid {
   protected:
 	std::vector<Mass> m_masses;
 	glm::vec3         m_inertiaCenter;
 	glm::mat3         m_inertiaTensor;
 	bool              m_locked;
-
-	glm::vec3 m_resultantForce;
-	glm::vec3 m_speedVector;
-	glm::vec3 m_torque;  // Par rapport au centre de masse
-	glm::vec3 m_angularMomentum;
+	glm::vec3         m_speedVector;
+	glm::vec3         m_angularMomentum;
 
   public:
 	Solid(std::vector<Mass> masses = std::vector<Mass>(), bool locked = false);
 
+	// getters
+	bool      getLocked() const;
 	float     getTotalMass() const;
 	glm::vec3 getInertiaCenter() const;
 	glm::mat3 getInertiaTensor() const;
-	glm::mat3 getInertiaTensorWorld(UnitQuaternion rotation) const;
-
-	glm::vec3 getResultantForce() const;
 	glm::vec3 getSpeedVector() const;
-	glm::vec3 getTorque() const;
 	glm::vec3 getAngularMomentum() const;
 	glm::vec3 getAngularSpeed() const;
+	glm::vec3 getSpeedAt(glm::vec3 point) const;
 
+	// memoization
 	void calculateInertiaCenter();
 	void calculateInertiaTensor();
 
+	// setters
 	Solid& setSpeedVector(glm::vec3 speedVector);
 	Solid& setAngularMomentum(glm::vec3 angularMomentum);
-
-	Solid&      applyForce(Force const& force, UnitQuaternion rotation);
-	glm::mat2x3 getWrench(Force const& force, UnitQuaternion rotation) const;
-	Solid&      applyWrench(glm::mat2x3 wrench, glm::mat3 rotationMatrix, glm::vec3 point);
-	Solid&      integrate(double deltaTime);
+	Solid& incrementSpeed(glm::vec3 deltaSpeed);
+	Solid& incrementAngularMomentum(glm::vec3 deltaAngularMomentum);
+	Solid& applyLinearImpulse(glm::vec3 impulse);
+	Solid& applyAngularImpulse(glm::vec3 impulse);
 
 	~Solid();
 };
 
+// Travail dans le repère monde
 class WorldObject {
   private:
 	std::vector<BoundingBox*> m_boundingBoxes;
 	Solid&                    m_solid;
 	Mesh&                     m_mesh;
 
+	glm::vec3 m_resultantForce;  // dans le repère monde
+	glm::vec3 m_torque;          // Par rapport au centre de masse, dans le repère monde
+
   public:
 	WorldObject(std::vector<BoundingBox*> boundingBoxes, Solid& solid, Mesh& mesh);
+
+	glm::vec3    getTorque() const;
+	glm::vec3    getResultantForce() const;
+	WorldObject& applyForce(Force const& force);       // force : pt d'application dans le repère local et direction dans le repère monde
+	glm::mat2x3  getWrench(Force const& force) const;  // force de la même nature que précisé précédemment
+	WorldObject& applyWrench(glm::mat2x3 wrench, glm::vec3 point);  // wrench dans le repère monde et point dans le repère local
 
 	std::vector<BoundingBox*>& getBoundingBoxes();
 	Solid&                     getSolid();

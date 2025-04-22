@@ -122,8 +122,9 @@ double firstPhysicsScene(GLFWwindow* window) {
 		glfwPollEvents();
 		nbrFrame++;
 
-		solid1.applyForce(Force(glm::vec3(0, -3, 0), glm::vec3(-8, 0, 1)), worldObject1.getMesh().getRotation());
-		solid2.applyForce(Force(glm::vec3(0, 3, 0), glm::vec3(8, 0, -1)), worldObject2.getMesh().getRotation());
+		worldObject1.applyForce(Force(glm::vec3(0, -3, 0), glm::vec3(-8, 0, 1)));
+		worldObject2.applyForce(Force(glm::vec3(0, 3, 0), glm::vec3(8, 0, -1)));
+
 		planet.update();
 		renderer.render();
 		glfwSwapBuffers(window);

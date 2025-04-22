@@ -29,7 +29,6 @@ class Quaternion {
 	virtual Quaternion& set(double w = 0, double x = 0, double y = 0, double z = 0);
 	Quaternion&         normalize();
 	Quaternion&         conjugate();
-	Quaternion          getConjugate() const;
 	double              dot(Quaternion const& quaternion) const;
 	glm::vec4           getValue() const;
 	glm::vec3           getVector() const;
@@ -63,12 +62,15 @@ class UnitQuaternion : public Quaternion {
 	UnitQuaternion(double angle = 0, double x = 0, double y = 0, double z = 0);
 	UnitQuaternion(double angle, glm::vec3 vector3);
 	UnitQuaternion(Quaternion quaternion);
+	UnitQuaternion  getConjugate() const;
 	UnitQuaternion& set(double angle, double x = 0, double y = 0, double z = 0);
 	UnitQuaternion& set(double angle, glm::vec3 axis);
 	glm::vec3       getAxis() const;
 	float           getAngle() const;
 	UnitQuaternion  slerp(UnitQuaternion const& quaternion1, UnitQuaternion const& quaternion2, float t) const;
+	glm::mat3       rotate(glm::mat3 matrix) const;
 	glm::vec3       rotate(glm::vec3 point) const;
+	glm::vec3       invertRotate(glm::vec3 point) const;
 	~UnitQuaternion();
 };
 

@@ -83,14 +83,14 @@ Solid::Solid(vector<Mass> masses, bool locked)
     : m_masses(masses),
       m_inertiaCenter(glm::vec3(0)),
       m_inertiaTensor(glm::mat3(1)),
-      m_resultantForce(glm::vec3(0)),
       m_speedVector(glm::vec3(0)),
-      m_torque(glm::vec3(0)),
       m_angularMomentum(glm::vec3(0)),
       m_locked(locked) {
 	this->calculateInertiaCenter();
 	this->calculateInertiaTensor();
 }
+
+bool Solid::getLocked() const { return m_locked; }
 
 float Solid::getTotalMass() const {
 	float totalMass(0);
@@ -105,20 +105,15 @@ float Solid::getTotalMass() const {
 glm::vec3 Solid::getInertiaCenter() const { return m_inertiaCenter; }
 glm::mat3 Solid::getInertiaTensor() const { return m_inertiaTensor; }
 
-glm::mat3 Solid::getInertiaTensorWorld(UnitQuaternion rotation) const {
-	glm::mat3 rotationMatrix = rotation.getMatrix();
-	return rotationMatrix * m_inertiaTensor * glm::transpose(rotationMatrix);
-}
-
-glm::vec3 Solid::getResultantForce() const { return m_resultantForce; }
 glm::vec3 Solid::getSpeedVector() const { return m_speedVector; }
-glm::vec3 Solid::getTorque() const { return m_torque; }
 glm::vec3 Solid::getAngularMomentum() const { return m_angularMomentum; }
 
 glm::vec3 Solid::getAngularSpeed() const {
 	glm::vec3 angularSpeed = glm::inverse(m_inertiaTensor) * m_angularMomentum;  // L = I . w <=> w = I-1 . L
 	return angularSpeed;
 }
+
+glm::vec3 Solid::getSpeedAt(glm::vec3 point) const { return m_speedVector + glm::cross(this->getAngularSpeed(), point); }
 
 void Solid::calculateInertiaCenter() {
 	m_inertiaCenter = glm::vec3(0);
@@ -149,7 +144,7 @@ void Solid::calculateInertiaTensor() {
 		    glm::vec3(-E, -D, C)   //
 		);
 
-		m_inertiaTensor += mass.getMass() * massTensor;  // I = ∑Ii . mi
+		m_inertiaTensor += mass.getMass() * massTensor;  // I = ∑(Ii . mi)
 	}
 }
 
@@ -164,35 +159,23 @@ Solid& Solid::setAngularMomentum(glm::vec3 angularMomentum) {
 	return *this;
 }
 
-Solid& Solid::applyForce(Force const& force, UnitQuaternion rotation) {
-	glm::mat2x3 wrench = this->getWrench(force, rotation);  // Torseur de l'action mécanique
-	this->applyWrench(wrench, rotation.getMatrix(), m_inertiaCenter);
+Solid& Solid::incrementSpeed(glm::vec3 deltaSpeed) {
+	m_speedVector += deltaSpeed;
 	return *this;
 }
 
-glm::mat2x3 Solid::getWrench(Force const& force, UnitQuaternion rotation) const {
-	glm::vec3 globalReferential = force.getDirection();
-	glm::vec3 localReferential = (rotation.getConjugate() * globalReferential * rotation).getVector();  // p = q-1 . p' . q
-	// Moment M = OA ^ F
-	// Torseur de type [Tx Ty Tz Mx My Mz]
-	return glm::mat2x3(glm::vec3(force.getDirection()), glm::vec3(glm::cross(force.getPosition() - m_inertiaCenter, localReferential)));
-}
-
-Solid& Solid::applyWrench(glm::mat2x3 wrench, glm::mat3 rotationMatrix, glm::vec3 point) {
-	m_resultantForce += wrench[0];                                                            // Fo = Fa
-	m_torque += wrench[1] + glm::cross(point - m_inertiaCenter, rotationMatrix * wrench[0]);  // Mo = Ma + OA ^ F
+Solid& Solid::incrementAngularMomentum(glm::vec3 deltaAngularMomentum) {
+	m_angularMomentum += deltaAngularMomentum;
 	return *this;
 }
 
-Solid& Solid::integrate(double deltaTime) {
-	if (m_locked) {
-		return *this;
-	}
+Solid& Solid::applyLinearImpulse(glm::vec3 impulse) {
+	m_speedVector += impulse;
+	return *this;
+}
 
-	m_speedVector += m_resultantForce / this->getTotalMass() * (float)deltaTime;  // a = F / m et dv / dt = a
-	m_angularMomentum += m_torque * (float)deltaTime;                             // dL / dt = ∑M
-	m_resultantForce = glm::vec3(0);
-	m_torque = glm::vec3(0);
+Solid& Solid::applyAngularImpulse(glm::vec3 impulse) {
+	m_angularMomentum += impulse;
 	return *this;
 }
 
@@ -205,28 +188,60 @@ Solid::~Solid() {}
 
 
 WorldObject::WorldObject(std::vector<BoundingBox*> boundingBoxes, Solid& solid, Mesh& mesh)
-    : m_boundingBoxes(boundingBoxes), m_solid(solid), m_mesh(mesh) {}
+    : m_boundingBoxes(boundingBoxes), m_solid(solid), m_resultantForce(glm::vec3(0)), m_torque(glm::vec3(0)), m_mesh(mesh) {}
+
+glm::vec3 WorldObject::getResultantForce() const { return m_resultantForce; }
+glm::vec3 WorldObject::getTorque() const { return m_torque; }
+
+WorldObject& WorldObject::applyForce(Force const& force) {
+	glm::mat2x3 wrench = this->getWrench(force);  // Torseur de l'action mécanique
+	this->applyWrench(wrench, m_solid.getInertiaCenter());
+	return *this;
+}
+
+glm::mat2x3 WorldObject::getWrench(Force const& force) const {
+	// Moment M = OA ^ F
+	// Torseur de type [Tx Ty Tz Mx My Mz] dans le repère monde
+	return glm::mat2x3(
+	    glm::vec3(force.getDirection()),
+	    glm::vec3(glm::cross(m_mesh.getRotation().rotate(force.getPosition() - m_solid.getInertiaCenter()), force.getDirection())));
+}
+
+WorldObject& WorldObject::applyWrench(glm::mat2x3 wrench, glm::vec3 point) {
+	m_resultantForce += wrench[0];                                                                                   // Fo = Fa
+	m_torque += wrench[1] + glm::cross(m_mesh.getRotation().rotate(point - m_solid.getInertiaCenter()), wrench[0]);  // Mo = Ma + OA ^ F
+	return *this;
+}
 
 std::vector<BoundingBox*>& WorldObject::getBoundingBoxes() { return m_boundingBoxes; }
 Mesh&                      WorldObject::getMesh() { return m_mesh; }
 Solid&                     WorldObject::getSolid() { return m_solid; }
 
 WorldObject& WorldObject::update(double deltaTime) {
-	m_solid.integrate(deltaTime);  // Mise à jour dynamique du solide
+	if (m_solid.getLocked()) {
+		return *this;
+	}
 
-	float dt = static_cast<float>(deltaTime);
+	glm::vec3 worldDeltaSpeed = m_resultantForce / m_solid.getTotalMass() * (float)deltaTime;  // a = F / m et dv / dt = a
+	m_solid.incrementSpeed(m_mesh.getRotation().invertRotate(worldDeltaSpeed));                // on bascule dans le repère local
+
+	glm::vec3 worldDeltaAngularMomentum = m_torque * (float)deltaTime;                               // dL / dt = ∑M
+	m_solid.incrementAngularMomentum(m_mesh.getRotation().invertRotate(worldDeltaAngularMomentum));  // on bascule dans le repère local
+
+	m_resultantForce = glm::vec3(0);
+	m_torque = glm::vec3(0);
 
 	// Translation linéaire
-	m_mesh.translate(m_solid.getSpeedVector() * dt);  // dx/dt = v
+	m_mesh.translate(m_mesh.getRotation().rotate(m_solid.getSpeedVector()) * (float)deltaTime);  // dx/dt = v
 
 	// Rotation autour de l'axe instantané
-	glm::vec3 angularSpeed = m_solid.getAngularSpeed();
-	float     norm = glm::length(angularSpeed);
+	glm::vec3 angularSpeed = m_solid.getAngularSpeed();  // dans le repère local
+	float     norm = glm::length(angularSpeed);  // en rad/s
 
-	if (norm > 1e-6f) {  // éviter les divisions par 0 et les petites rotations inutiles
+	if (norm > 1e-9f) {  // éviter les divisions par 0 et les petites rotations inutiles
 		glm::vec3 axis = glm::normalize(angularSpeed);
-		float     angle = norm * dt / M_PI * 180.0f;  // conversion rad → degré
-		m_mesh.rotateSelf(angle, axis, m_solid.getInertiaCenter());
+		float     angle = norm * (float)deltaTime / M_PI * 180.0f;   // conversion rad → degré
+		m_mesh.rotateSelf(angle, angularSpeed, m_solid.getInertiaCenter());  // rotation dans le repère local
 	}
 
 	return *this;
@@ -362,8 +377,6 @@ void BallJoint::applyConstraints(double deltaTime) {
 	if (deltaTime <= 0) {
 		return;
 	}
-
-	
 }
 
 BallJoint::~BallJoint() {}

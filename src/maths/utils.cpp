@@ -66,7 +66,6 @@ Quaternion& Quaternion::set(double w, double x, double y, double z) {
 
 void Quaternion::print(ostream& flow) const { flow << '(' << m_x << " ; " << m_y << " ; " << m_z << " ; " << m_w << ')'; }
 
-Quaternion  Quaternion::getConjugate() const { return Quaternion(-m_x, -m_y, -m_z, m_w); }
 Quaternion& Quaternion::conjugate() {
 	m_x *= -1;
 	m_y *= -1;
@@ -178,9 +177,10 @@ UnitQuaternion::UnitQuaternion(double angle, double x, double y, double z)
 	this->normalize();
 }
 
-
 UnitQuaternion::UnitQuaternion(Quaternion q) : Quaternion::Quaternion(q.x(), q.y(), q.z(), q.w()) { this->normalize(); }
 UnitQuaternion::UnitQuaternion(double angle, glm::vec3 vector3) : UnitQuaternion::UnitQuaternion(angle, vector3.x, vector3.y, vector3.z) {}
+
+UnitQuaternion UnitQuaternion::getConjugate() const { return UnitQuaternion(Quaternion(-m_x, -m_y, -m_z, m_w)); }
 
 UnitQuaternion& UnitQuaternion::set(double angle, double x, double y, double z) {
 	double sin = std::sin(angle / 360 * M_PI);
@@ -238,7 +238,14 @@ UnitQuaternion UnitQuaternion::slerp(UnitQuaternion const& quaternion1, UnitQuat
 	return (q1 * s1 + q2 * s2).normalize();
 }
 
+glm::mat3 UnitQuaternion::rotate(glm::mat3 matrix) const {
+	glm::mat3 rotationMatrix = this->getMatrix();
+	glm::mat3 rotatedMatrix = rotationMatrix * matrix * glm::transpose(rotationMatrix);
+	return rotatedMatrix;
+}
+
 glm::vec3 UnitQuaternion::rotate(glm::vec3 point) const { return (*this * point * this->getConjugate()).getVector(); }
+glm::vec3 UnitQuaternion::invertRotate(glm::vec3 point) const { return this->getConjugate().rotate(point); }
 
 UnitQuaternion::~UnitQuaternion() {}
 
