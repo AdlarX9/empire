@@ -1,30 +1,34 @@
 # Empire
 
-## Présentation
+## Overview
 
-Empire est un projet qui a pour but final de recréer le chien robot Spot de Boston Dynamics. \
-Ce projet se découpe ainsi en 4 étapes :
-- Créer le moteur 3D pour visualiser le chien
-- Y implémenter un moteur physique pour l'environnement d'entraînement du chien
-- Écrire le chien robot (contrôles moteur, données captées, etc)
-- Mettre une IA (Soft Actor-Critic dans ce cas) dans le chien pour qu'il apprenne à marcher
+*Empire* is a project with the ultimate goal of **recreating Boston Dynamics' robot dog**, Spot. \
+The project is divided into *four* main phases:
+- *Develop* a **3D engine** to visualize the robot dog
+- *Implement* a **physics engine** for the dog’s ***training environment***
+- *Program* the **robot dog (motor controls, data acquisition, etc.)**
+- *Integrate* an **AI (Soft Actor-Critic in this case)** into the dog to teach it how to ***walk***
 
-## Lancer le projet
+## Running the Project
 
-Tout d'abord, il vous faut avoir installé les bibliothèques précompilées `GLFW` et `GLM` sur votre ordinateur. \
-Ensuite, saisissez la commande suivante :
+First, ensure that the precompiled libraries `GLFW` and `GLM` are installed on your machine. \
+Next, run the following commands:
+```bash
+g++ -std=c++20 ... src/core/main.cpp src/maths/utils.cpp src/three/main.cpp src/opengl/main.cpp src/lib/glad.o -o main
+```
+```bash
+./main
+```
 
-> `$ g++ -std=c++20 ... src/core/main.cpp src/maths/utils.cpp src/three/main.cpp src/opengl/main.cpp src/lib/glad.o -o main`
-> 
-*Note : les `...` représentent ici les flags afin de lier GLFW et GLM au projet.* \
-*Exemple : `-F/Library/Frameworks -framework GLFW -L/opt/homebrew/include etc`*
+> *Note: The `...` represents the flags for linking GLFW and GLM to the project.* \
+> *Example: `-F/Library/Frameworks -framework GLFW -L/opt/homebrew/include etc`*
 
-## Exemples
+## Examples
 
-### Le moteur 3D
+### 3D Engine
 
 > ![Cube](examples/cube.png) \
-> *Un cube intersectant un plan*
+> *A cube intersecting a plane*
 
 > ![Sphere](examples/sphere.png) \
-> *Une sphère UV en squelette*
+> *A skeletal UV sphere*
