@@ -81,7 +81,7 @@ glm::vec4 Quaternion::getValue() const { return glm::vec4(m_x, m_y, m_z, m_w); }
 glm::vec3 Quaternion::getVector() const { return glm::vec3(m_x, m_y, m_z); }
 
 glm::mat3 Quaternion::getMatrix() const {
-	glm::quat q(m_x, m_y, m_z, m_w);
+	glm::quat q(m_w, m_x, m_y, m_z);
 	glm::mat3 matrix = glm::toMat3(q);
 	return matrix;
 }
@@ -172,8 +172,8 @@ Quaternion::~Quaternion() {}
 
 
 UnitQuaternion::UnitQuaternion(double angle, double x, double y, double z)
-    : Quaternion::Quaternion(x * sin(angle / 360 * M_PI), y * sin(angle / 360 * M_PI), z * sin(angle / 360 * M_PI),
-                             cos(angle / 360 * M_PI)) {
+    : Quaternion::Quaternion(x * sin(angle * M_PI / 360.0f), y * sin(angle * M_PI / 360.0f), z * sin(angle * M_PI / 360.0f),
+                             cos(angle * M_PI / 360.0f)) {
 	this->normalize();
 }
 
@@ -183,11 +183,11 @@ UnitQuaternion::UnitQuaternion(double angle, glm::vec3 vector3) : UnitQuaternion
 UnitQuaternion UnitQuaternion::getConjugate() const { return UnitQuaternion(Quaternion(-m_x, -m_y, -m_z, m_w)); }
 
 UnitQuaternion& UnitQuaternion::set(double angle, double x, double y, double z) {
-	double sin = std::sin(angle / 360 * M_PI);
+	double sin = std::sin(angle * M_PI / 360.0f);
 	m_x = x * sin;
 	m_y = y * sin;
 	m_z = z * sin;
-	m_w = cos(angle / 360 * M_PI);
+	m_w = cos(angle * M_PI / 360.0f);
 	this->normalize();
 	return *this;
 }

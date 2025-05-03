@@ -194,8 +194,7 @@ glm::vec3 WorldObject::getResultantForce() const { return m_resultantForce; }
 glm::vec3 WorldObject::getTorque() const { return m_torque; }
 
 WorldObject& WorldObject::applyForce(Force const& force) {
-	glm::mat2x3 wrench = this->getWrench(force);  // Torseur de l'action mécanique
-	this->applyWrench(wrench, m_solid.getInertiaCenter());
+	this->applyWrench(glm::mat2x3(force.getDirection(), glm::vec3(0)), force.getPosition());
 	return *this;
 }
 
@@ -217,30 +216,34 @@ std::vector<BoundingBox*>& WorldObject::getBoundingBoxes() { return m_boundingBo
 Mesh&                      WorldObject::getMesh() { return m_mesh; }
 Solid&                     WorldObject::getSolid() { return m_solid; }
 
+// Script de mise à jour de la physique
 WorldObject& WorldObject::update(double deltaTime) {
 	if (m_solid.getLocked()) {
 		return *this;
 	}
 
+	// On applique la somme des forces
 	glm::vec3 worldDeltaSpeed = m_resultantForce / m_solid.getTotalMass() * (float)deltaTime;  // a = F / m et dv / dt = a
-	m_solid.incrementSpeed(m_mesh.getRotation().invertRotate(worldDeltaSpeed));                // on bascule dans le repère local
+	m_solid.incrementSpeed(worldDeltaSpeed);
 
+	// On applique la somme des moments
 	glm::vec3 worldDeltaAngularMomentum = m_torque * (float)deltaTime;                               // dL / dt = ∑M
 	m_solid.incrementAngularMomentum(m_mesh.getRotation().invertRotate(worldDeltaAngularMomentum));  // on bascule dans le repère local
 
+	// On remet à 0 les forces et les moments
 	m_resultantForce = glm::vec3(0);
 	m_torque = glm::vec3(0);
 
 	// Translation linéaire
-	m_mesh.translate(m_mesh.getRotation().rotate(m_solid.getSpeedVector()) * (float)deltaTime);  // dx/dt = v
+	m_mesh.translate(m_solid.getSpeedVector() * (float)deltaTime);  // dx/dt = v
 
 	// Rotation autour de l'axe instantané
 	glm::vec3 angularSpeed = m_solid.getAngularSpeed();  // dans le repère local
-	float     norm = glm::length(angularSpeed);  // en rad/s
+	float     norm = glm::length(angularSpeed);          // en rad/s
 
 	if (norm > 1e-9f) {  // éviter les divisions par 0 et les petites rotations inutiles
 		glm::vec3 axis = glm::normalize(angularSpeed);
-		float     angle = norm * (float)deltaTime / M_PI * 180.0f;   // conversion rad → degré
+		float     angle = norm * (float)deltaTime / M_PI * 180.0f;           // conversion rad → degré
 		m_mesh.rotateSelf(angle, angularSpeed, m_solid.getInertiaCenter());  // rotation dans le repère local
 	}
 
