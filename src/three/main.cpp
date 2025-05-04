@@ -1,5 +1,5 @@
-#define WIDTH 2400
-#define HEIGHT 1500
+#define WIDTH 3100
+#define HEIGHT 1800
 
 #define MAX_LIGHT 16
 
@@ -152,24 +152,25 @@ Mesh& Mesh::translate(float dx, float dy, float dz) {
 
 Mesh& Mesh::rotateSelf(UnitQuaternion rotation, glm::vec3 point) {
 	m_rotation *= rotation;
-	m_translation += m_rotation.rotate(-point) + point;
+	m_translation += rotation.rotate(point) - point;
 	return *this;
 }
 
 Mesh& Mesh::rotateSelf(float angle, glm::vec3(axis), glm::vec3 point) {
-	this->rotateSelf(UnitQuaternion(angle, axis));
+	this->rotateSelf(UnitQuaternion(angle, axis), point);
 	return *this;
 }
 
-Mesh& Mesh::rotateScene(UnitQuaternion rotation) {
+Mesh& Mesh::rotateScene(UnitQuaternion rotation, glm::vec3 point) {
 	if (rotation.squaredLength() > 0.9) {
 		m_rotation = rotation * m_rotation;
+		m_translation += rotation.rotate(point) - point;
 	}
 	return *this;
 }
 
-Mesh& Mesh::rotateScene(float angle, glm::vec3(axis)) {
-	this->rotateScene(UnitQuaternion(angle, axis));
+Mesh& Mesh::rotateScene(float angle, glm::vec3(axis), glm::vec3 point) {
+	this->rotateScene(UnitQuaternion(angle, axis), point);
 	return *this;
 }
 

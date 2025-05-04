@@ -78,8 +78,8 @@ class Mesh {
 	Mesh&           translate(float dx, float dy, float dz);
 	Mesh&           rotateSelf(UnitQuaternion rotation, glm::vec3 point = glm::vec3(0));
 	Mesh&           rotateSelf(float angle, glm::vec3(axis), glm::vec3 point = glm::vec3(0));
-	Mesh&           rotateScene(UnitQuaternion rotation);
-	Mesh&           rotateScene(float angle, glm::vec3(axis));
+	Mesh&           rotateScene(UnitQuaternion rotation, glm::vec3 point = glm::vec3(0));
+	Mesh&           rotateScene(float angle, glm::vec3(axis), glm::vec3 point = glm::vec3(0));
 	glm::vec3       transform(glm::vec3 point) const;
 	glm::vec3       invertTransform(glm::vec3 point) const;
 

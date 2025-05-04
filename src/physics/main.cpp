@@ -227,8 +227,8 @@ WorldObject& WorldObject::update(double deltaTime) {
 	m_solid.incrementSpeed(worldDeltaSpeed);
 
 	// On applique la somme des moments
-	glm::vec3 worldDeltaAngularMomentum = m_torque * (float)deltaTime;                               // dL / dt = ∑M
-	m_solid.incrementAngularMomentum(m_mesh.getRotation().invertRotate(worldDeltaAngularMomentum));  // on bascule dans le repère local
+	glm::vec3 worldDeltaAngularMomentum = m_torque * (float)deltaTime;  // dL / dt = ∑M
+	m_solid.incrementAngularMomentum(worldDeltaAngularMomentum);
 
 	// On remet à 0 les forces et les moments
 	m_resultantForce = glm::vec3(0);
@@ -238,13 +238,15 @@ WorldObject& WorldObject::update(double deltaTime) {
 	m_mesh.translate(m_solid.getSpeedVector() * (float)deltaTime);  // dx/dt = v
 
 	// Rotation autour de l'axe instantané
-	glm::vec3 angularSpeed = m_solid.getAngularSpeed();  // dans le repère local
-	float     norm = glm::length(angularSpeed);          // en rad/s
+	glm::mat3 inertiaTensor = m_mesh.getRotation().rotate(m_solid.getInertiaTensor());    // I = R . I0 . R-1
+	glm::vec3 angularSpeed = m_solid.getAngularMomentum();  // L = I . w <=> w = I-1 . L
+	// glm::vec3 angularSpeed = glm::inverse(inertiaTensor) * m_solid.getAngularMomentum();  // L = I . w <=> w = I-1 . L
+	float     norm = glm::length(angularSpeed);                                           // en rad/s
 
-	if (norm > 1e-9f) {  // éviter les divisions par 0 et les petites rotations inutiles
+	if (norm > 0) {  // éviter les divisions par 0 et les petites rotations inutiles
 		glm::vec3 axis = glm::normalize(angularSpeed);
-		float     angle = norm * (float)deltaTime / M_PI * 180.0f;           // conversion rad → degré
-		m_mesh.rotateSelf(angle, angularSpeed, m_solid.getInertiaCenter());  // rotation dans le repère local
+		float     angle = norm * (float)deltaTime / M_PI * 180.0f;            // conversion rad → degré
+		m_mesh.rotateScene(angle, angularSpeed, m_solid.getInertiaCenter());  // rotation dans le repère local
 	}
 
 	return *this;

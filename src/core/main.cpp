@@ -1,5 +1,5 @@
-#define WIDTH 2400
-#define HEIGHT 1500
+#define WIDTH 3100
+#define HEIGHT 1800
 
 #include "../lib/glad/glad.h"
 #include "../maths/utils.hpp"
@@ -123,8 +123,8 @@ double firstPhysicsScene(GLFWwindow* window) {
 		glfwPollEvents();
 		nbrFrame++;
 
-		worldObject1.applyForce(Force(glm::vec3(0, -3, 0), glm::vec3(-8, 0, 1)));
-		worldObject2.applyForce(Force(glm::vec3(0, 3, 0), glm::vec3(8, 0, -1)));
+		worldObject1.applyForce(Force(glm::vec3(0, -3, 0), glm::vec3(-3, 0, 1)));
+		worldObject2.applyForce(Force(glm::vec3(0, 3, 0), glm::vec3(3, 0, -1)));
 
 		planet.update();
 		renderer.render();
